@@ -1,14 +1,8 @@
 
-  
+  create view "postgres"."public"."test_model__dbt_tmp"
     
-
-  create  table "postgres"."public_pipedrive_analytics"."test_model__dbt_tmp"
-  
-  
-    as
-  
-  (
+    
+  as (
     SELECT *
 FROM "postgres"."public"."activity"
   );
-  

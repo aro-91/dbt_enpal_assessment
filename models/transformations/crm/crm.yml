@@ -1,0 +1,20 @@
+version: 2
+
+models:
+    - name: t_activities
+      description: contains the events to track interactions for deals based on a snapshot.
+    
+    - name: t_deal_funnel_events
+      description: deal events including possible substeps.
+    
+    - name: t_deal_lost_reasons
+      description: list of reasons why a deal was lost.
+    
+    - name: t_sales_funnel_monthly_columns
+      description: key transformation to build a funnel and it's KPIs, with KPIs as columns.
+    
+    - name: t_sales_funnel_monthly_rows
+      description: key transformation to build a funnel and it's KPIs, with KPIs as rows.
+    
+    - name: t_user_deal_events
+      description: tracking changes in users assigned to specific deals.

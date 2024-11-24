@@ -1,0 +1,35 @@
+version: 2
+
+models:
+    - name: stg_activity_types
+      config:
+        materialized: table
+      description: raw catalog table with activity types.
+      columns:
+        - name: type
+          tests:
+            - accepted_values:
+                values: ['meeting', 'sc_2', 'follow_up', 'after_close_call']
+    
+    - name: stg_deal_changes
+      config:
+        materialized: incremental
+        unique_key: [deal_id, change_time, changed_field_key]
+      description: incremental model for deals event tracking.
+      columns:
+        - name: deal_id
+          tests:
+            - not_null
+        - name: change_time
+          tests:
+            - not_null
+    
+    - name: stg_fields
+      config:
+        materialized: table
+      description: raw catalog table with fields type and their possible values.
+    
+    - name: stg_stages
+      config:
+        materialized: table
+      description: raw catalog table with funnel steps.

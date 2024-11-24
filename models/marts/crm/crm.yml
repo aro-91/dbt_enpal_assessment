@@ -1,0 +1,8 @@
+version: 2
+
+models:
+    - name: rep_sales_funnel_monthly
+      description: mart for the sales funnel.
+
+    - name: rep_sales_funnel_monthly_columns
+      description: mart for the sales funnel with KPI as columns.

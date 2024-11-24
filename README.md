@@ -1,3 +1,12 @@
+Note:
+Please note that I got this warning:
+ warning: in the working copy of 'raw_data/load_data.sh', LF will be replaced by CRLF the next time Git touches it 
+warning: in the working copy of 'target/index.html', LF will be replaced by CRLF the next time Git touches it
+
+I had to touch that file because it was throwing some problems to be executed in my local machine.
+
+Thank you!
+
 Welcome to your new dbt project!
 
 ### Using the starter project
