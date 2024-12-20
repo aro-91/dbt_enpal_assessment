@@ -1,0 +1,29 @@
+version: 2
+
+models:
+  - name: rep_sales_funnel_monthly
+    description: Tracks the number of deals by stage reachedwith monthly date granularity
+    config:
+      contract:
+        enforced: true
+    columns:
+      - name: month
+        description: Date (month) when the deals reached the stage
+        data_type: date
+        tests:
+          - not_null
+      - name: kpi_name
+        description: A name of the deal stage = funnel step = KPI.
+        data_type: string
+        tests:
+          - not_null
+      - name: funnel_step
+        description: A unique numeric identifier of the funnel step.
+        data_type: integer
+        tests:
+          - not_null
+      - name: deals_count
+        description: Number of deals that entered the given stage in the given month.
+        data_type: integer
+        tests:
+          - not_null

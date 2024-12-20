@@ -1,0 +1,15 @@
+version: 2
+
+models:
+  - name: stg_stages
+    description: Possible stages of a deal's lifecycle.
+    config:
+      contract:
+        enforced: true
+    columns:
+      - name: stage_id
+        description: The unique identifier for the stage.
+        data_type: integer
+      - name: stage_name
+        description: The name of the stage, describing a step in the deal lifecycle (e.g., Lead Generation, Closing, Renewal/Expansion).
+        data_type: string
