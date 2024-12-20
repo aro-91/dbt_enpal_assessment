@@ -4,5 +4,26 @@ sources:
   - name: postgres_public
     database: postgres
     schema: public
+    description: "PipeDrive CRM data"
     tables:
       - name: activity
+        description: "Activities, or sales calls regarding the deals"
+        columns:
+          - name: activity_id
+            description: "Unique identifier of an activity (sales call)"
+            data_type: integer
+          - name: type
+            description: "Activity (sales call) type"
+            data_type: string
+          - name: assigned_to_user
+            description: "Unique identifier of a user who is responsible for the activity execution (sales call)"
+            data_type: integer
+          - name: deal_id
+            description: "Unique identifier of a deal that the activity (sales call) is about"
+            data_type: integer
+          - name: done
+            description: "Whether the activity was performed or not"
+            data_type: boolean
+          - name: due_to
+            description: "Timestamp when the activity is planned to be completed"
+            data_type: timestamp
