@@ -1,29 +1,100 @@
 version: 2
 
 sources:
-  - name: postgres_public
+  - name: pipedrive
     database: postgres
     schema: public
-    description: "PipeDrive CRM data"
+    description: Source data from the PipeDrive CRM system
     tables:
       - name: activity
-        description: "Activities, or sales calls regarding the deals"
+        description: Contains information about activities associated with deals, including their types, assignments, and statuses.
         columns:
           - name: activity_id
-            description: "Unique identifier of an activity (sales call)"
+            description: The unique identifier for the activity.
             data_type: integer
           - name: type
-            description: "Activity (sales call) type"
+            description: The type of activity (e.g., follow_up, meeting, after_close_call, sc_2).
             data_type: string
           - name: assigned_to_user
-            description: "Unique identifier of a user who is responsible for the activity execution (sales call)"
+            description: The unique identifier of the user assigned to the activity.
             data_type: integer
           - name: deal_id
-            description: "Unique identifier of a deal that the activity (sales call) is about"
+            description: The unique identifier of the deal associated with the activity.
             data_type: integer
           - name: done
-            description: "Whether the activity was performed or not"
+            description: A boolean flag indicating whether the activity is completed.
             data_type: boolean
           - name: due_to
-            description: "Timestamp when the activity is planned to be completed"
+            description: The timestamp indicating when the activity is due.
+            data_type: timestamp
+      - name: activity_types
+        description: Contains information about the types of activities.
+        columns:
+          - name: id
+            description: The unique identifier for the activity type.
+            data_type: integer
+          - name: name
+            description: The name of the activity type (e.g., Sales Call 1, Follow Up Call).
+            data_type: string
+          - name: active
+            description: Indicates whether the activity type is active (Yes or No).
+            data_type: string
+          - name: type
+            description: The key used to identify the activity type programmatically (e.g., meeting, sc_2, follow_up, after_close_call).
+            data_type: string
+      - name: deal_changes
+        description: Tracks changes to deals, including what fields were updated and when.
+        columns:
+          - name: deal_id
+            description: The unique identifier for the deal.
+            data_type: integer
+          - name: change_time
+            description: The timestamp of when the field was changed.
+            data_type: timestamp
+          - name: changed_field_key
+            description: The key of the field that was changed (e.g., add_time, user_id, stage_id, lost_reason).
+            data_type: string
+          - name: new_value
+            description: The new value of the field after the change.
+            data_type: string
+      - name: fields
+        description: Contains metadata about fields used for the deals, including field keys, names, and value options.
+        columns:
+          - name: id
+            description: The unique identifier for the field.
+            data_type: integer
+          - name: field_key
+            description: The key used to identify the field programmatically (e.g., add_time, user_id, stage_id, lost_reason).
+            data_type: string
+          - name: name
+            description: The human-readable name of the field (e.g., Deal created, Owner, Stage, Lost reason).
+            data_type: string
+          - name: field_value_options
+            description: >
+              JSON-encoded array of value options for fields that have predefined values (e.g., stages, lost reasons). 
+              Each element of an array has 2 keys: 'id' and 'label'.
+            data_type: json
+      - name: stages
+        description: Contains information about the stages of a deal's lifecycle.
+        columns:
+          - name: stage_id
+            description: The unique identifier for the stage.
+            data_type: integer
+          - name: stage_name
+            description: The name of the stage, describing a step in the deal lifecycle (e.g., Lead Generation, Closing, Renewal/Expansion).
+            data_type: string
+      - name: users
+        description: Contains information about users, including their names and emails.
+        columns:
+          - name: id
+            description: The unique identifier for the user.
+            data_type: integer
+          - name: name
+            description: The full name of the user.
+            data_type: string
+          - name: email
+            description: The email address of the user.
+            data_type: string
+          - name: modified
+            description: The timestamp of the last modification made to the user's information.
             data_type: timestamp
