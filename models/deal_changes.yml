@@ -1,0 +1,21 @@
+version: 2
+
+models:
+  - name: deal_changes
+    description: Tracks changes to deals, including what fields were updated and when.
+    config:
+      contract:
+        enforced: true
+    columns:
+      - name: deal_id
+        description: The unique identifier for the deal.
+        data_type: integer
+      - name: change_time
+        description: The timestamp of when the field was changed.
+        data_type: timestamp
+      - name: changed_field_key
+        description: The key of the field that was changed (e.g., add_time, user_id, stage_id, lost_reason).
+        data_type: string
+      - name: new_value
+        description: The new value of the field after the change.
+        data_type: string
