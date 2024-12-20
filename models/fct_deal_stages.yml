@@ -1,0 +1,21 @@
+version: 2
+
+models:
+  - name: fct_deal_stages
+    description: Tracks deals stage changes, including what stage a deal entered and when.
+    config:
+      contract:
+        enforced: true
+    columns:
+      - name: deal_id
+        description: The unique identifier for the deal.
+        data_type: integer
+        tests:
+          - not_null
+          - unique
+      - name: stage_entered_timestamp
+        description: The timestamp of when the deal entered the stage.
+        data_type: timestamp
+      - name: stage_id
+        description: The unique identifier for the stage.
+        data_type: integer
