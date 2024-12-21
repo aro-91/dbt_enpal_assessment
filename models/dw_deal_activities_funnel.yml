@@ -1,0 +1,41 @@
+version: 2
+
+models:
+  - name: dw_deal_activities_funnel
+    description: Tracks deals activities progression, including what deal activity was done and when.
+    config:
+      contract:
+        enforced: true
+    columns:
+      - name: deal_activity_type_id
+        description: The unique identified for a deal and an activity type (generated).
+        data_type: integer
+        constraints:
+          - type: not_null
+          - type: primary_key
+        tests:
+          - not_null
+          - unique
+      - name: deal_id
+        description: The unique identifier for the deal.
+        data_type: integer
+        tests:
+          - not_null
+      - name: activity_type_first_done_timestamp
+        description: The timestamp of when the activity type was performed for the deal for the first time.
+        data_type: timestamp
+        tests:
+          - not_null
+      - name: activity_type_id
+        description: The unique identifier for the activity type.
+        data_type: integer
+        constraints:
+          - type: not_null
+          - type: foreign_key
+            to: ref('dim_activity_types')
+            to_columns: [id]
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_activity_types')
+              field: id

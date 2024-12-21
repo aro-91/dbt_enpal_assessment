@@ -1,0 +1,21 @@
+version: 2
+
+models:
+  - name: stg_activity_types
+    description: Contains information about the types of activities.
+    config:
+      contract:
+        enforced: true
+    columns:
+      - name: id
+        description: The unique identifier for the activity type.
+        data_type: integer
+      - name: name
+        description: The name of the activity type (e.g., Sales Call 1, Follow Up Call).
+        data_type: string
+      - name: active
+        description: Indicates whether the activity type is active (Yes or No).
+        data_type: string
+      - name: type
+        description: The key used to identify the activity type programmatically (e.g., meeting, sc_2, follow_up, after_close_call).
+        data_type: string

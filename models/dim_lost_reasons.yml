@@ -1,14 +1,14 @@
 version: 2
 
 models:
-  - name: dim_stages
-    description: Possible stages of a deal's lifecycle.
+  - name: dim_lost_reasons
+    description: Possible reasons why a deal is lost.
     config:
       contract:
         enforced: true
     columns:
       - name: id
-        description: The unique identifier for the stage.
+        description: The unique identifier for the lost reason.
         data_type: integer
         constraints:
           - type: not_null
@@ -17,7 +17,7 @@ models:
           - unique
           - not_null
       - name: label
-        description: The name of the stage, describing a step in the deal lifecycle (e.g., Lead Generation, Closing, Renewal/Expansion).
+        description: The human readable description of the lost reason (e.g., Customer Not Ready, Pricing Issues).
         data_type: string
       - name: field_id
         description: The unique identifier for the deal field.

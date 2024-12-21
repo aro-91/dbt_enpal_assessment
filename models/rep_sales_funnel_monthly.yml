@@ -18,8 +18,8 @@ models:
         tests:
           - not_null
       - name: funnel_step
-        description: A unique numeric identifier of the funnel step.
-        data_type: integer
+        description: A unique identifier of the funnel step, according to the steps order.
+        data_type: string
         tests:
           - not_null
       - name: deals_count

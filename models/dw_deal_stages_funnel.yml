@@ -1,0 +1,41 @@
+version: 2
+
+models:
+  - name: dw_deal_stages_funnel
+    description: Tracks deals stages progression, including what stage a deal entered and when.
+    config:
+      contract:
+        enforced: true
+    columns:
+      - name: deal_stage_id
+        description: The unique identified for a deal and a stage (generated).
+        data_type: integer
+        constraints:
+          - type: not_null
+          - type: primary_key
+        tests:
+          - not_null
+          - unique
+      - name: deal_id
+        description: The unique identifier for the deal.
+        data_type: integer
+        tests:
+          - not_null
+      - name: stage_id
+        description: The unique identifier for the stage.
+        data_type: integer
+        constraints:
+          - type: not_null
+          - type: foreign_key
+            to: ref('dim_stages')
+            to_columns: [id]
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_stages')
+              field: id
+      - name: stage_first_entered_timestamp
+        description: The timestamp of when the deal entered the stage for the first time.
+        data_type: timestamp
+        tests:
+          - not_null

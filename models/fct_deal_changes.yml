@@ -1,0 +1,33 @@
+version: 2
+
+models:
+  - name: fct_deal_changes
+    description: Tracks changes to deals, including what fields were updated and when.
+    config:
+      contract:
+        enforced: true
+    columns:
+      - name: deal_id
+        description: The unique identifier for the deal.
+        data_type: integer
+        tests:
+          - not_null
+      - name: change_timestamp
+        description: The timestamp of when the field was changed.
+        data_type: timestamp
+      - name: changed_field_id
+        description: The unique identifier of the field that was changed.
+        data_type: integer
+        constraints:
+          - type: not_null
+          - type: foreign_key
+            to: ref('dim_fields')
+            to_columns: [id]
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_fields')
+              field: id
+      - name: new_value
+        description: The new value of the field after the change.
+        data_type: string

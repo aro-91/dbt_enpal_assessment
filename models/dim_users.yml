@@ -1,0 +1,27 @@
+version: 2
+
+models:
+  - name: dim_users
+    description: Possible stages of a deal's lifecycle.
+    config:
+      contract:
+        enforced: true
+    columns:
+      - name: id
+        description: The unique identifier for the user.
+        data_type: integer
+        constraints:
+          - type: not_null
+          - type: primary_key
+        tests:
+          - unique
+          - not_null
+      - name: name
+        description: The full name of the user.
+        data_type: string
+      - name: email
+        description: The email address of the user.
+        data_type: string
+      - name: last_modified_timestamp
+        description: The timestamp of the last modification made to the user's information.
+        data_type: timestamp

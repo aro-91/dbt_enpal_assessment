@@ -1,0 +1,39 @@
+version: 2
+
+models:
+  - name: fct_activity
+    description: Contains information about activities associated with deals, including their types, assignments, and statuses.
+    config:
+      contract:
+        enforced: true
+    columns:
+      - name: activity_id
+        description: The unique identifier for the activity.
+        data_type: integer
+        tests:
+          - not_null
+      - name: activity_type_id
+        description: The unique identifier of the type of the activity.
+        data_type: integer
+        constraints:
+          - type: not_null
+          - type: foreign_key
+            to: ref('dim_activity_types')
+            to_columns: [id]
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_activity_types')
+              field: id
+      - name: assigned_to_user_id
+        description: The unique identifier of the user assigned to the activity.
+        data_type: integer
+      - name: deal_id
+        description: The unique identifier of the deal associated with the activity.
+        data_type: integer
+      - name: is_done
+        description: A boolean flag indicating whether the activity is completed.
+        data_type: boolean
+      - name: due_to_timestamp
+        description: The timestamp indicating when the activity is due.
+        data_type: timestamp

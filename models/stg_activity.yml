@@ -1,0 +1,27 @@
+version: 2
+
+models:
+  - name: stg_activity
+    description: Contains information about activities associated with deals, including their types, assignments, and statuses.
+    config:
+      contract:
+        enforced: true
+    columns:
+      - name: activity_id
+        description: The unique identifier for the activity.
+        data_type: integer
+      - name: type
+        description: The type of activity (e.g., follow_up, meeting, after_close_call, sc_2).
+        data_type: string
+      - name: assigned_to_user
+        description: The unique identifier of the user assigned to the activity.
+        data_type: integer
+      - name: deal_id
+        description: The unique identifier of the deal associated with the activity.
+        data_type: integer
+      - name: done
+        description: A boolean flag indicating whether the activity is completed.
+        data_type: boolean
+      - name: due_to
+        description: The timestamp indicating when the activity is due.
+        data_type: timestamp

@@ -1,0 +1,30 @@
+version: 2
+
+models:
+  - name: dim_activity_types
+    description: Contains information about the types of activities.
+    config:
+      contract:
+        enforced: true
+    columns:
+      - name: id
+        description: The unique identifier for the activity type.
+        data_type: integer
+        constraints:
+          - type: not_null
+          - type: primary_key
+        tests:
+          - unique
+          - not_null
+      - name: label
+        description: The human readable description of the activity type (e.g., Sales Call 1, Follow Up Call).
+        data_type: string
+      - name: is_active
+        description: Indicates whether the activity type is active or not.
+        data_type: boolean
+      - name: key
+        description: The key used to identify the activity type programmatically (e.g., meeting, sc_2, follow_up, after_close_call).
+        data_type: string
+        tests:
+          - unique
+          - not_null

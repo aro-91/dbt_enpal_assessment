@@ -1,0 +1,23 @@
+version: 2
+
+models:
+  - name: stg_fields
+    description: Contains metadata about fields used for the deals, including field keys, names, and value options.
+    config:
+      contract:
+        enforced: true
+    columns:
+      - name: id
+        description: The unique identifier for the field.
+        data_type: integer
+      - name: field_key
+        description: The key used to identify the field programmatically (e.g., add_time, user_id, stage_id, lost_reason).
+        data_type: string
+      - name: name
+        description: The human-readable name of the field (e.g., Deal created, Owner, Stage, Lost reason).
+        data_type: string
+      - name: field_value_options
+        description: >
+          JSON-encoded array of value options for fields that have predefined values (e.g., stages, lost reasons). 
+          Each element of an array has 2 keys: 'id' and 'label'.
+        data_type: jsonb
