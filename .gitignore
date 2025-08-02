@@ -1,0 +1,12 @@
+dbt_modules/
+dbt_packages/
+dbt_internal_packages/
+logs/
+.python-version
+.venv
+target/
+*.pyc
+.mypy_cache/
+__pycache__/
+.vscode
+*.DS_Store

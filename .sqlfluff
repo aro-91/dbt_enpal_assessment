@@ -1,0 +1,29 @@
+[sqlfluff]
+dialect = postgres
+exclude_rules = L016,L031,L034,L039,L054,L059,L067,RF01
+templater = dbt
+large_file_skip_byte_limit = 30000
+
+[sqlfluff:indentation]
+tab_space_size = 2
+
+[sqlfluff:rules:capitalisation.keywords]
+capitalisation_policy = upper
+
+[sqlfluff:rules:capitalisation.identifiers]
+capitalisation_policy = upper
+
+[sqlfluff:rules:capitalisation.functions]
+capitalisation_policy = upper
+
+[sqlfluff:rules:capitalisation.literals]
+capitalisation_policy = upper
+
+[sqlfluff:rules:capitalisation.types]
+capitalisation_policy = upper
+
+[sqlfluff:rules:references.special_chars] # Space needed for SFMC exports
+allow_space_in_identifier = True
+
+[sqlfluff:templater:jinja]
+load_macros_from_path=macros
