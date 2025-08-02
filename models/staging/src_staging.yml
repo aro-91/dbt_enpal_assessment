@@ -1,0 +1,80 @@
+version: 2
+
+sources:
+  - name: pipedrive_crm
+    description: "Pipedrive CRM source for staging data"
+    schema: public
+    tables:
+      - name: src_activity
+        description: "Pipedrive activity data. Stores information about tasks, calls, meetings, and other scheduled interactions in Pipedrive."
+        identifier: activity
+        columns:
+          - name: activity_id
+            description: "Unique identifier for the activity"
+          - name: type
+            description: "Type of the activity (e.g., task, call, meeting)"
+          - name: assigned_to_user
+            description: "User assigned to the activity"
+          - name: deal_id
+            description: "ID of the deal associated with the activity"
+          - name: done
+            description: "Indicates if the activity is completed"
+          - name: due_to
+            description: "Due date and time when the activity is scheduled or due"
+
+      - name: src_activity_types
+        description: "Pipedrive activity types. Contains predefined types of activities in Pipedrive (calls, meetings, tasks, etc.)."
+        identifier: activity_types
+        columns:
+          - name: id
+            description: "Unique identifier for the activity type"
+          - name: name
+            description: "Name of the activity type"
+          - name: active
+            description: "Indicates if the activity type is active"
+          - name: type
+            description: "Type of the activity (e.g., call, meeting, task)"
+      - name: src_deal_changes
+        description: "Pipedrive deal changes. Records changes made to deals, including updates to deal stages, values, and other attributes."
+        identifier: deal_changes
+        columns:
+          - name: deal_id
+            description: "Unique identifier for the deal change"
+          - name: change_time
+            description: "Timestamp of when the change occurred"
+          - name: changed_field_key
+            description: "Field that was changed in the deal"
+          - name: new_value
+            description: "New value of the field after the change"
+      - name: src_fields
+        description: "Pipedrive fields. Contains custom fields defined for deals, contacts, organizations, and other entities in Pipedrive."
+        identifier: fields
+        columns:
+          - name: id
+            description: "Unique identifier for the field"
+          - name: field_key
+            description: "Key of the field, used to reference it in API calls"
+          - name: name
+            description: "Name of the field"
+          - name: field_value_options
+            description: "JSON/JSONB data containing possible values for dropdown/select fields (like the stage options you worked with earlier)"
+      - name: src_stages
+        description: "Pipedrive stages. Represents the stages in the sales pipeline for deals."
+        identifier: stages
+        columns:
+          - name: stage_id
+            description: "Unique identifier for the stage"
+          - name: stage_name
+            description: "Name of the stage"
+      - name: src_users
+        description: "Pipedrive users. Contains information about users in the Pipedrive account."
+        identifier: users
+        columns:
+          - name: id
+            description: "Unique identifier for the user"
+          - name: name
+            description: "Name of the user"
+          - name: email
+            description: "Email address of the user"
+          - name: modified
+            description: "Timestamp of the last modification to the user record"

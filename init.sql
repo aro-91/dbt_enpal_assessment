@@ -45,3 +45,15 @@ CREATE TABLE users (
     email VARCHAR(255),
     modified TIMESTAMP
 );
+
+-- Adding _last_synced column to each table and setting default value as CURRENT_TIMESTAMP
+ALTER TABLE activity_types ADD COLUMN _last_synced TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
+ALTER TABLE activity ADD COLUMN _last_synced TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
+ALTER TABLE deal_changes ADD COLUMN _last_synced TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
+ALTER TABLE fields ADD COLUMN _last_synced TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
+ALTER TABLE stages ADD COLUMN _last_synced TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
+ALTER TABLE users ADD COLUMN _last_synced TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
+
+-- Create the pgcrypto extension for hashing functions
+-- This is necessary for the mask_field macro to work correctly
+CREATE EXTENSION IF NOT EXISTS pgcrypto;

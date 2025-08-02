@@ -1,12 +1,11 @@
-
 # Name your project! Project names should contain only lowercase characters
 # and underscores. A good package name should reflect your organization's
 # name or the intended use of these models
-name: 'enpal_assessment_project'
-version: '1.0.0'
+name: "enpal_assessment_project"
+version: "1.0.0"
 
 # This setting configures which "profile" dbt uses for this project.
-profile: 'enpal_assessment_project'
+profile: "enpal_assessment_project"
 
 # These configurations specify where dbt should look for different types of files.
 # The `model-paths` config, for example, states that models in this project can be
@@ -18,10 +17,20 @@ seed-paths: ["seeds"]
 macro-paths: ["macros"]
 snapshot-paths: ["snapshots"]
 
-clean-targets:         # directories to be removed by `dbt clean`
+clean-targets: # directories to be removed by `dbt clean`
   - "target"
   - "dbt_packages"
 
+query-comment:
+  append: True
+
+quoting:
+  database: true
+  schema: true
+  identifier: true
+
+vars:
+  mask_salt: "your_real_secret_salt"
 
 # Configuring models
 # Full documentation: https://docs.getdbt.com/docs/configuring-models
@@ -30,7 +39,26 @@ clean-targets:         # directories to be removed by `dbt clean`
 # directory as views. These settings can be overridden in the individual model
 # files using the `{{ config(...) }}` macro.
 models:
+  +on_schema_change: "sync_all_columns"
   enpal_assessment_project:
-    # Config indicated by + and applies to all files under models/example/
-    +schema: pipedrive_analytics
-    +materialized: table
+    staging:
+      +materialized: incremental
+      +tags: staging
+      +schema: staging
+    analytics:
+      +tags: analytics
+      gate:
+        +materialized: view
+        +schema: analytics_gate
+        +tags: analytics_gate
+      marts:
+        +materialized: table
+        +schema: marts
+      reports:
+        +materialized: table
+        +schema: reports
+
+seeds:
+  enpal_assessment_project:
+    +quote_columns: false
+    +schema: seed
