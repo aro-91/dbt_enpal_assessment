@@ -1,0 +1,83 @@
+models:
+  - name: stg_activities
+    description: "Staging model for Pipedrive CRM activities. Cleans up and standardizes column names."
+    columns:
+      - name: activity_id
+        description: "The primary key for activities."
+        tests:
+          - not_null
+      - name: activity_type
+        description: "The type of the activity, e.g., 'call', 'meeting'."
+      - name: assigned_user_id
+        description: "The user ID the activity is assigned to."
+      - name: deal_id
+        description: "The deal ID associated with the activity."
+      - name: is_done
+        description: "Boolean indicating if the activity is complete."
+      - name: due_time
+        description: "The scheduled due time for the activity."
+
+  - name: stg_activity_types
+    description: "Staging model for Pipedrive CRM activity types."
+    columns:
+      - name: activity_type_id
+        description: "The unique ID for the activity type."
+        tests:
+          - unique
+          - not_null
+      - name: activity_key
+        description: "unique business key, e.g., 'meeting'."
+      - name: is_active
+        description: "status of the activity type, e.g., 'Yes'."
+      - name: activity_type_name
+        description: "The name of the activity type, e.g., 'Sales Call 1'."
+
+  - name: stg_deal_changes
+    description: "Staging model for Pipedrive CRM deal status changes."
+    columns:
+      - name: deal_id
+        description: "The deal ID."
+      - name: change_time
+        description: "The timestamp of the change."
+      - name: changed_field_key
+        description: "The field key that was changed."
+      - name: new_value
+        description: "The new value of the changed field."
+
+  - name: stg_deal_stages
+    description: "Staging model for Pipedrive CRM stages."
+    columns:
+      - name: stage_id
+        description: "The unique ID for the stage."
+        tests:
+          - unique
+          - not_null
+      - name: stage_name
+        description: "The name of the stage, e.g., 'Qualified Lead'."
+
+  - name: stg_users
+    description: "Staging model for Pipedrive CRM users."
+    columns:
+      - name: user_id
+        description: "The unique ID for the user."
+        tests:
+          - unique
+          - not_null
+      - name: user_name
+        description: "The name of the user."
+      - name: user_email
+        description: "The email address of the user."
+      - name: updated_date
+        description: "The user information updated date"
+
+  - name: stg_monthly_spine
+    description: "Staging model for monthly spine to build continuous funnel"
+    columns:
+      - name: stage_id
+        description: "The funnel master key to join deal stages"
+      - name: kpi_name
+        description: "The funnel kpi master name"
+      - name: funnel_step
+        description: "The funnel step master name"
+      - name: month
+        description: "The continuous month series"

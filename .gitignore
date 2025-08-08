@@ -1,0 +1,13 @@
+# dbt-specific directories
+dbt_packages/
+dbt_modules/
+target/
+
+# Log files
+
+logs/
+
+.idea/
+
+# Profiles (never commit your credentials!)
+profiles.yml

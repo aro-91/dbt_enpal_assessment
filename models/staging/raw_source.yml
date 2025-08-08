@@ -1,0 +1,96 @@
+version: 2
+
+sources:
+  - name: raw
+    description: Raw Pipedrive CRM data from PostgreSQL
+    database: postgres
+    schema: public
+
+    tables:
+      - name: activity
+        description: Activities logged in Pipedrive (calls, meetings, emails, etc.)
+        columns:
+          - name: activity_id
+            description: Unique activity identifier
+            tests:
+              - not_null
+          - name: type
+            description: Activity type ID reference
+          - name: assigned_to_user
+            description: User assigned to the activity
+          - name: deal_id
+            description: Associated deal ID
+          - name: done
+            description: Whether activity is completed (boolean)
+          - name: due_to
+            description: Activity due date/time
+
+      - name: activity_types
+        description: Activity type definitions and configurations
+        columns:
+          - name: id
+            description: Unique activity type identifier
+            tests:
+              - unique
+              - not_null
+          - name: name
+            description: Activity type name
+          - name: active
+            description: Whether activity type is active
+          - name: type
+            description: Activity type category
+
+      - name: deal_changes
+        description: Historical record of deal field changes and stage transitions
+        columns:
+          - name: deal_id
+            description: Associated deal ID
+            tests:
+              - not_null
+          - name: change_time
+            description: Timestamp when change occurred
+          - name: changed_field_key
+            description: Field that was changed
+          - name: new_value
+            description: New value after change
+
+      - name: fields
+        description: Custom and system field definitions
+        columns:
+          - name: id
+            description: Unique field identifier
+            tests:
+              - unique
+              - not_null
+          - name: field_key
+            description: Field key/name
+          - name: name
+            description: Field display name
+          - name: field_value_options
+            description: Field options (for select/enum fields)
+
+      - name: stages
+        description: Deal pipeline stages configuration
+        columns:
+          - name: stage_id
+            description: Unique stage identifier
+            tests:
+              - unique
+              - not_null
+          - name: stage_name
+            description: Stage name
+
+      - name: users
+        description: Pipedrive users (sales representatives, managers, etc.)
+        columns:
+          - name: id
+            description: Unique user identifier
+            tests:
+              - unique
+              - not_null
+          - name: name
+            description: User full name
+          - name: email
+            description: User email address
+          - name: modified
+            description: Last modification timestamp
