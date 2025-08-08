@@ -1,0 +1,12 @@
+ models:
+   - name: report_deal_funnel_analysis
+     description: "Final reporting model for the monthly sales funnel."
+     columns:
+      - name: month
+        description: "The month of the event."
+      - name: kpi_name
+        description: "The KPI name for the funnel step."
+      - name: funnel_step
+        description: "The name of the funnel step."
+      - name: deals_count
+        description: "The number of distinct deals that reached this step in the given month."

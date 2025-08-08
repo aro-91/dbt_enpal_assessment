@@ -1,0 +1,12 @@
+models:
+    - name: intermediate_deals_stages
+      description: "Intermediate model that combines all relevant deal-related events into a single, chronological timeline for each deal."
+      columns:
+      - name: deal_id
+        description: "The unique ID for the deal."
+      - name: month
+        description: "The start date of the month"
+      - name: kpi_name
+        description: "The KPI name associated with the event (e.g., '1. Lead Generation')."
+      - name: funnel_step
+        description: "The funnel step associated with the event (e.g., 'Step_1')."
