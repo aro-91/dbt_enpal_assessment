@@ -1,0 +1,12 @@
+
+    
+    
+    truncate table "PIPEDRIVE_ANALYTICS"."RAW"."ACTIVITY_TYPES";
+    -- dbt seed --
+    
+            insert into pipedrive_analytics.raw.activity_types (id, name, active, type) values
+            (%s,%s,%s,%s),(%s,%s,%s,%s),(%s,%s,%s,%s),(%s,%s,%s,%s)
+        
+
+;
+  

@@ -1,0 +1,12 @@
+
+    
+    
+    truncate table "PIPEDRIVE_ANALYTICS"."RAW"."FIELDS";
+    -- dbt seed --
+    
+            insert into pipedrive_analytics.raw.fields (ID, FIELD_KEY, NAME, FIELD_VALUE_OPTIONS) values
+            (%s,%s,%s,%s),(%s,%s,%s,%s),(%s,%s,%s,%s),(%s,%s,%s,%s)
+        
+
+;
+  

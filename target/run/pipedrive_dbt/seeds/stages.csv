@@ -1,0 +1,12 @@
+
+    
+    
+    truncate table "PIPEDRIVE_ANALYTICS"."RAW"."STAGES";
+    -- dbt seed --
+    
+            insert into pipedrive_analytics.raw.stages (stage_id, stage_name) values
+            (%s,%s),(%s,%s),(%s,%s),(%s,%s),(%s,%s),(%s,%s),(%s,%s),(%s,%s),(%s,%s)
+        
+
+;
+  

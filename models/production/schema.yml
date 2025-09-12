@@ -1,0 +1,24 @@
+version: 2
+
+models:
+  - name: prod_sales_funnel_monthly
+    description: >
+      Monthly sales funnel summary.  
+      Each row represents the number of deals that entered a funnel stage (or sub-step KPI) in a given month.  
+      Built on top of `int_deals_with_kpis`, this model supports funnel conversion analysis by stage and KPI step.
+    columns:
+      - name: month
+        description: >
+          First day of the calendar month in which deals entered a stage or KPI step.
+      - name: kpi_name
+        description: >
+          The stage or KPI step label.  
+          Example values: "Qualified lead", "Needs Assessment", "Step 2.1: Sales Call 1".
+      - name: funnel_step
+        description: >
+          The parent funnel stage associated with the KPI step.  
+          This ensures sub-steps (like Sales Call 1) can be grouped back to their parent stage.
+      - name: deals_entered_stage_count
+        description: >
+          Count of distinct deal stage change events that entered the funnel stage (or sub-step KPI) in the given month.  
+          Each deal stage change is only counted once per kpi_name/month combination.

@@ -1,0 +1,77 @@
+version: 2
+
+models:
+  - name: int_deal_stage_history
+    description: >
+      Intermediate model that tracks deal stage changes over time.
+      Each row represents a deal entering a new stage, with valid_from/valid_to
+      timestamps to capture historical movement through the pipeline.
+    columns:
+      - name: deal_stage_change_id
+        description: Surrogate key for a stage change event.
+        tests:
+          - unique
+          - not_null
+      - name: deal_id
+        description: The deal that moved stages.
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_deal_changes')
+                field: deal_id
+      - name: stage_id
+        description: The stage the deal moved into.
+        tests:
+          - not_null
+          - relationships:
+              arguments:  
+                to: ref('stg_stages')
+                field: stage_id
+      - name: valid_from
+        description: Timestamp when the deal entered this stage.
+        tests:
+          - not_null
+
+  - name: int_dim_date
+    description: >
+      Date dimension table covering 2020–2040. Provides calendar attributes
+      (year, month, week, weekday, etc.) for reporting and joins.
+    columns:
+      - name: date_key
+        description: Surrogate integer key in YYYYMMDD format.
+        tests:
+          - unique
+          - not_null
+      - name: the_date
+        description: The actual calendar date.
+        tests:
+          - unique
+          - not_null
+
+  - name: int_deals_with_kpis
+    description: >
+      Intermediate model that combines deal stage history with activity flags
+      to track funnel KPIs such as Sales Call 1 and Sales Call 2 completion.
+    columns:
+      - name: deal_stage_change_id
+        description: Stage change event identifier.
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('int_deal_stage_history')
+                field: deal_stage_change_id
+      - name: deal_id
+        description: Deal identifier.
+        tests:
+          - not_null
+      - name: funnel_sub_step
+        description: "KPI sub-step (e.g. 'Step 2.1: Sales Call 1')."
+        tests:
+          - accepted_values:
+              values: ['Step 2.1: Sales Call 1', 'Step 3.1: Sales Call 2']
+              quote: true
+              config:
+                severity: warn
+

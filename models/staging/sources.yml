@@ -1,0 +1,70 @@
+version: 2
+
+sources:
+  - name: raw
+    database: pipedrive_analytics
+    schema: raw
+    tables:
+      - name: activity
+      - name: activity_types    
+      - name: deal_changes
+      - name: stages     
+      - name: users
+      - name: fields      
+    
+models:
+  - name: stg_activity
+    description: >
+      An activity represents a scheduled action taken toward closing a deal—such as a call, meeting, task, email, or any custom activity type. It is linked to deals, people, organizations, or projects within Pipedrive and captures reminders, due dates, completion status, and associations to relevant CRM entities.
+    columns:
+      - name: activity_id
+      #    freshness:
+      #        error_after: {count: 25, period: hour}            
+      #   tests:
+      #     - unique
+      #     - not_null
+      # - name: activity_type
+      #   tests:
+      #     - not_null
+      #     - relationships:
+      #          arguments:   
+      #           to: ref('stg_activity_types')
+      #           field: activity_type_key
+      # - name: assigned_to_user_id
+      #   tests:
+      #     - relationships:
+      #          arguments:
+      #           to: ref('stg_users')
+      #           field: user_id                          
+
+  - name: stg_activity_types
+    description: >
+      Activity types define the kinds of activities that can occur, each with a label, icon, and optional color. Internally, types are referenced by immutable keys and can be customized to match the organization’s sales workflow.
+    columns:
+      - name: activity_type_id
+        tests:
+          - unique
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [1, 2, 3, 4]            
+
+  - name: stg_deal_changes
+    description: >
+      The deal_changes table logs every change in a deal’s lifecycle, including stage transitions and status updates such as “won” or “lost.” It provides a full audit trail of how deals progress through the sales pipeline.
+
+  - name: stg_stages
+    description: >
+      Stages correspond to the steps within a sales pipeline. Each deal resides in a stage (for example, “Qualified,” “Proposal,” “Negotiation”), and moving between stages reflects progress along the sales process.
+
+  - name: stg_users
+    description: >
+      Users represent individuals with access to the Pipedrive account, typically sales reps or managers. They can be assigned activities, own deals, and make changes across CRM records.
+    columns:
+      - name: user_id
+        tests:
+          - unique
+          - not_null
+  - name: stg_fields
+    description: >
+      Fields define the metadata for Pipedrive objects such as deals, persons, organizations, and activities. They include both default fields provided by Pipedrive and any custom fields created by users. Each field record specifies its data type, key, name, and the entity it belongs to, making it possible to interpret and standardize data across the CRM.
