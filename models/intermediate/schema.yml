@@ -1,0 +1,173 @@
+version: 2
+
+models:
+  - name: int_activity_funnel_mapping
+    description: '{{ doc("int_activity_funnel_mapping") }}'
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns: ['activity_id', 'deal_id']
+    columns:
+      - name: activity_id
+        description: Identifier for each activity.
+        data_type: int
+        tests:
+          - not_null
+      - name: activity_type
+        description: Activity type.
+        data_type: varchar
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['follow_up', 'after_close_call', 'sc_2', 'meeting']
+      - name: name
+        description: Activity name.
+        data_type: varchar
+        tests:
+          - not_null
+      - name: assigned_to_user
+        description: User to which the activity is assigned.
+        data_type: int
+        tests:
+          - not_null
+      - name: deal_id
+        description: Deal ID to which the activity is assigned.
+        data_type: int
+        tests:
+          - not_null
+      - name: is_completed
+        description: Boolean field indicating if activity is completed.
+        data_type: bool
+        tests:
+          - not_null
+      - name: due_date
+        description: Due date (timestamp) for the activity.
+        data_type: timestamp
+        tests:
+          - not_null
+      - name: activity_status
+        description: Column indicating if activity is completed
+        data_type: varchar
+        tests:
+          - not_null
+      - name: due_month
+        description: The month in which the activity is due.
+        data_type: int
+        tests:
+          - not_null
+      - name: due_year
+        description: The year in which the activity is due.
+        data_type: int
+        tests:
+          - not_null
+      - name: due_month_year
+        description: The year-month in which the activity is due.
+        data_type: varchar
+        tests:
+          - not_null
+
+  - name: int_deal_stage_progression
+    description: '{{ doc("int_deal_stage_progression") }}'
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns: ['change_time', 'deal_id']
+    columns:
+      - name: deal_id
+        description: Deal ID corresponding to change.
+        data_type: int
+        tests:
+          - not_null
+      - name: change_time
+        description: Timestamp at which the change is recorded.
+        data_type: timestamp
+        tests:
+          - not_null
+      - name: new_stage_id
+        description: Updated stage id or new funnel stage
+        data_type: int
+        tests:
+          - not_null
+      - name: previous_stage_id
+        description: Previous stage id or funnel stage.
+        data_type: int
+      - name: next_stage_id
+        description: Next stage id or funnel stage.
+        data_type: int
+      - name: stage_name
+        description: The updated funnel stage corresponding to new_stage_id.
+        data_type: varchar
+        tests:
+          - not_null
+      - name: previous_stage
+        description: The previous funnel stage.
+        data_type: varchar
+      - name: next_stage
+        description: The next funnel stage.
+        data_type: varchar
+      - name: is_deal_start
+        description: Flag indicating if the record is start of deal/funnel.
+        data_type: varchar
+        tests:
+          - not_null
+      - name: is_deal_end
+        description: Flag indicating if the record is end of deal/funnel.
+        data_type: varchar
+        tests:
+          - not_null
+      - name: change_month_year
+        description: The year-month in which the change is recorded.
+        data_type: varchar
+        tests:
+          - not_null
+      - name: change_year
+        description: The year in which the change is recorded.
+        data_type: int
+        tests:
+          - not_null
+      - name: change_month
+        description: The month in which the change is recorded.
+        data_type: int
+        tests:
+          - not_null
+
+  - name: int_activity_deals_funnel
+    description: '{{ doc("int_activity_deals_funnel") }}'
+    columns:
+      - name: deal_id
+        description: Deal ID
+        data_type: int
+        tests:
+          - not_null
+      - name: funnel_step
+        description: Funnel step corresponding to deal_id.
+        data_type: int
+        tests:
+          - not_null
+      - name: kpi_name
+        description: Funnel step name corresponding to deal_id.
+        data_type: varchar
+        tests:
+          - not_null
+      - name: month_year
+        description: The year-month in which the funnel step is recorded for a given deal id.
+        data_type: varchar
+        tests:
+          - not_null
+      - name: source
+        description: The source of the record, whether deals or activities data source
+        data_type: varchar
+        tests:
+          - not_null
+
+  - name: int_month_funnel_matrix
+    description:  '{{ doc("int_month_funnel_matrix") }}'
+    columns:
+      - name: month_year
+        description: The year-month corresponding to funnel step.
+        data_type: varchar
+      - name: funnel_step
+        description: Funnel step.
+        data_type: int
+      - name: kpi_name
+        description: Funnel step name.
+        data_type: varchar

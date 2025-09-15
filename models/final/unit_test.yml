@@ -1,0 +1,59 @@
+version: 2
+
+unit_tests:
+  - name: test_funnel_step_with_matching_deals
+    description: "Test funnel step with matching deals"
+    model: rep_sales_funnel_monthly
+    given:
+      - input: ref('int_month_funnel_matrix')
+        format: sql
+        rows: |
+          SELECT '2025-09' AS month_year,
+                 'kpi_1' AS kpi_name,
+                 'step_1' AS funnel_step
+
+      - input: ref('int_activity_deals_funnel')
+        format: sql
+        rows: |
+          SELECT '2025-09' AS month_year,
+                 'kpi_1' AS kpi_name,
+                 'step_1' AS funnel_step,
+                 1 AS deal_id
+          UNION ALL
+          SELECT '2025-09', 'kpi_1', 'step_1', 2
+
+    expect:
+      format: sql
+      rows: |
+        SELECT '2025-09' AS month,
+               'kpi_1' AS kpi_name,
+               'step_1' AS funnel_step,
+               2 AS deals_count
+
+  - name: test_funnel_step_without_matching_deals
+    description: "Test funnel step with no matching deals"
+    model: rep_sales_funnel_monthly
+    given:
+      - input: ref('int_month_funnel_matrix')
+        format: sql
+        rows: |
+          SELECT '2025-09' AS month_year,
+                 'kpi_2' AS kpi_name,
+                 'step_2' AS funnel_step
+
+      - input: ref('int_activity_deals_funnel')
+        format: sql
+        rows: |
+          SELECT NULL::text AS month_year,
+                 NULL::text AS kpi_name,
+                 NULL::text AS funnel_step,
+                 NULL::int AS deal_id
+          
+
+    expect:
+      format: sql
+      rows: |
+        SELECT '2025-09' AS month,
+               'kpi_2' AS kpi_name,
+               'step_2' AS funnel_step,
+               0 AS deals_count

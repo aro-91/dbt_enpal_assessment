@@ -1,0 +1,117 @@
+version: 2
+
+models:
+  - name: raw_fact_activities
+    description: '{{ doc("raw_fact_activities") }}'
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns: ['activity_id', 'deal_id']
+    columns:
+      - name: activity_id
+        description: Identifier for each activity.
+        data_type: int
+        tests:
+          - not_null
+      - name: type
+        description: Activity type.
+        data_type: varchar
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['follow_up', 'after_close_call', 'sc_2', 'meeting']
+          - relationships:
+              to: ref('raw_dim_activity_types')
+              field: type
+      - name: assigned_to_user
+        description: User to which the activity is assigned.
+        data_type: int
+        tests:
+          - not_null
+      - name: deal_id
+        description: Deal ID to which the activity is assigned.
+        data_type: int
+        tests:
+          - not_null
+      - name: done
+        description: Boolean field indicating if activity is done.
+        data_type: bool
+        tests:
+          - not_null
+      - name: due_to
+        description: Due date (timestamp) for the activity.
+        data_type: timestamp
+        tests:
+          - not_null
+      - name: due_month
+        description: The month in which the activity is due.
+        data_type: int
+        tests:
+          - not_null
+      - name: due_year
+        description: The year in which the activity is due.
+        data_type: int
+        tests:
+          - not_null
+      - name: due_month_year
+        description: The year-month in which the activity is due.
+        data_type: varchar
+        tests:
+          - not_null
+      - name: load_date
+        description: Ingestion date of the data
+        data_type: date
+        tests:
+          - not_null
+
+  - name: raw_fact_deal_changes
+    description: '{{ doc("raw_fact_deal_changes") }}'
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns: ['change_time', 'deal_id']
+    columns:
+      - name: deal_id
+        description: Deal ID corresponding to change.
+        data_type: int
+        tests:
+          - not_null
+      - name: change_time
+        description: Timestamp at which the change is recorded.
+        data_type: timestamp
+        tests:
+          - not_null
+      - name: changed_field_key
+        description: Field which is changed/updated.
+        data_type: varchar
+        tests:
+          - not_null
+      - name: new_value
+        description: The updated/new value corresponding to changed field.
+        data_type: varchar
+        tests:
+          - not_null
+      - name: change_month
+        description: The month in which the change is recorded.
+        data_type: int
+        tests:
+          - not_null
+      - name: change_year
+        description: The year in which the change is recorded.
+        data_type: int
+        tests:
+          - not_null
+      - name: change_month_year
+        description: The year-month in which the change is recorded.
+        data_type: varchar
+        tests:
+          - not_null
+      - name: load_date
+        description: Ingestion date of the data
+        data_type: date
+        tests:
+          - not_null
+
+
+
+
+          

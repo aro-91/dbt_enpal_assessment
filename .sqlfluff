@@ -1,0 +1,6 @@
+[sqlfluff]
+templater = jinja
+dialect = postgres
+sql_file_exts = .sql
+max_line_length = 120
+rules = L019,L020,L021

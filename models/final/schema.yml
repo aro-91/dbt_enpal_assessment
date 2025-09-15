@@ -1,0 +1,30 @@
+version: 2
+
+models:
+  - name: rep_sales_funnel_monthly
+    description: '{{ doc("rep_sales_funnel_monthly") }}'
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns: ['month', 'kpi_name']
+    columns:
+      - name: month
+        description: The year-month in which the activity is due.
+        data_type: varchar
+        tests:
+          - not_null
+      - name: kpi_name
+        description: Funnel step name corresponding to deal_id.
+        data_type: varchar
+        tests:
+          - not_null
+      - name: funnel_step
+        description: Funnel step corresponding to deal_id.
+        data_type: int
+        tests:
+          - not_null
+      - name: deals_count
+        description: Total count of deals.
+        data_type: int
+        tests:
+          - not_null
+     

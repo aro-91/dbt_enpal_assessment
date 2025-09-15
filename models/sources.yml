@@ -1,8 +1,78 @@
 version: 2
 
 sources:
-  - name: postgres_public
-    database: postgres
-    schema: public
-    tables:
-      - name: activity
+ - name: postgres_public
+   database: postgres
+   schema: public
+   tables:
+     - name: activity
+       description: "Sales activities and tasks assigned to users for specific deals"
+       columns:
+         - name: activity_id
+           description: Identifier for each activity.
+         - name: type
+           description: Activity type.
+         - name: assigned_to_user
+           description: User to which the activity is assigned.
+         - name: deal_id
+           description: Deal ID to which the activity is assigned.
+         - name: done
+           description: Boolean field indicating if activity is done.
+         - name: due_to
+           description: Due date (timestamp) for the activity.
+    
+     - name: activity_types
+       description: "Master data for activity types and their configurations"
+       columns:
+         - name: id
+           description: Unique identifier for each activity.
+         - name: name
+           description: Activity name.
+         - name: active
+           description: If the activity is active.
+         - name: type
+           description: Activity type 
+    
+     - name: deal_changes
+       description: "Historical log of all changes made to deals over time"
+       columns:
+         - name: deal_id
+           description: Deal ID corresponding to change.
+         - name: change_time
+           description: Timestamp at which the change is recorded.
+         - name: changed_field_key
+           description: Field which is changed/updated.
+         - name: new_value
+           description: The updated/new value corresponding to changed field.
+    
+     - name: fields
+       description: "Field definitions and metadata for deal properties"
+       columns:
+         - name: id
+           description: "Field identifier"
+         - name: field_key
+           description: "Technical key for the field"
+         - name: name
+           description: "Human-readable field name"
+         - name: field_value_options
+           description: "JSON containing possible values for the field"
+    
+     - name: stages
+       description: "Sales funnel stages and their definitions"
+       columns:
+         - name: stage_id
+           description: Unique identifier for each funnel stage.
+         - name: stage_name
+           description: Funnel stage name.
+    
+     - name: users
+       description: "Sales team members and their information"
+       columns:
+         - name: id
+           description: "Unique user identifier"
+         - name: name
+           description: "User's full name"
+         - name: email
+           description: "User's email address"
+         - name: modified
+           description: "Last modification timestamp"

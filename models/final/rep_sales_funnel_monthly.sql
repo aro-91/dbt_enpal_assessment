@@ -1,0 +1,29 @@
+-- Monthly sales funnel reporting model
+
+{% set month_funnel_matrix = ref('int_month_funnel_matrix') %}
+{% set activity_deals_funnel = ref('int_activity_deals_funnel') %}
+
+
+with deals AS (
+
+    select month_year,
+           kpi_name,
+           funnel_step,
+       count(distinct deal_id) deals_count
+from {{activity_deals_funnel}}
+
+group by month_year,
+         kpi_name,
+         funnel_step
+)
+
+
+select mfm.month_year as month,
+       mfm.kpi_name,
+       mfm.funnel_step,
+       coalesce(d.deals_count,0) deals_count
+from {{month_funnel_matrix}} mfm 
+left join deals d
+
+on mfm.month_year = d.month_year
+and mfm.funnel_step = d.funnel_step

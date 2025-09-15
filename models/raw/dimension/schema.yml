@@ -1,0 +1,55 @@
+version: 2
+
+models:
+  - name: raw_dim_stages
+    description: '{{ doc("raw_dim_stages") }}'
+    columns:
+      - name: stage_id
+        description: Unique identifier for each funnel stage.
+        data_type: int
+        tests:
+          - not_null
+          - unique
+          - accepted_values:
+              arguments:
+                values: [1, 2, 3, 4, 5, 6, 7, 8, 9]
+      - name: stage_name
+        description: Funnel stage name.
+        data_type: varchar
+        tests:
+          - not_null
+      - name: load_date
+        description: Ingestion date of the data
+        data_type: date
+        tests:
+          - not_null
+
+  - name: raw_dim_activity_types
+    description: '{{ doc("raw_dim_activity_types") }}'
+    columns:
+      - name: id
+        description: Unique identifier for each activity.
+        data_type: int
+        tests:
+          - not_null
+          - unique
+      - name: name
+        description: Activity name.
+        data_type: varchar
+        tests:
+          - not_null
+      - name: active
+        description: If the activity is active.
+        data_type: varchar
+        tests:
+          - not_null
+      - name: type
+        description: Activity type.
+        data_type: varchar
+        tests:
+          - not_null  
+      - name: load_date
+        description: Ingestion date of the data
+        data_type: date
+        tests:
+          - not_null
