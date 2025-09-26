@@ -1,0 +1,13 @@
+# Python / venv
+.venv/
+__pycache__/
+*.pyc
+.dbt/
+
+# dbt build artifacts
+target/
+
+# editors
+.vscode/
+.idea/
+*.log
