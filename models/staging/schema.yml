@@ -1,0 +1,85 @@
+version: 2
+
+models:
+  - name: stg_pipedrive__activity
+    description: "Normalized activity records used for funnel sub-steps"
+    columns:
+      - name: activity_id
+        description: "Unique identifier of the activity (BIGINT)."
+        tests: [not_null, unique]
+      - name: deal_id
+        description: "Identifier of the deal this activity belongs to (BIGINT)."
+        tests: [not_null]
+      - name: activity_type_key
+        description: "Stable machine key from activity_types.type (e.g., 'meeting', 'sc_2'); join key for mapping to funnel sub-steps."
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_pipedrive__activity_types')
+                field: activity_type_key
+      - name: is_done
+        description: "Completion flag normalized from raw source (e.g., done/marked_as_done) into a boolean."
+      - name: happened_at
+        description: "Timestamp used for monthly bucketing (e.g., from due_to/created_at). Use date_trunc('month', happened_at) for month."
+
+  - name: stg_pipedrive__activity_types
+    description: "Lookup of activity type keys → names"
+    columns:
+      - name: activity_type_id
+        description: "Numeric identifier of the activity type (BIGINT)."
+        tests: [not_null, unique]
+      - name: activity_type_key
+        description: "Stable machine key used by activities (joins from stg_pipedrive__activity.activity_type_key)."
+        tests: [not_null, unique]
+      - name: activity_type_name
+        description: "Human-readable label for the activity type."
+
+  - name: stg_pipedrive__deal_changes
+    description: "Typed change log (incl. numeric new_stage_id when applicable)"
+    columns:
+      - name: deal_id
+        description: "Identifier of the deal whose field changed (BIGINT)."
+        tests: [not_null]
+      - name: changed_field_key
+        description: "Name/key of the field that changed (e.g., 'stage_id', 'user_id')."
+        tests: [not_null]
+      - name: changed_at
+        description: "Exact timestamp when the change was recorded (TIMESTAMP)."
+        tests: [not_null]
+      - name: new_stage_id
+        description: "Parsed numeric stage id (BIGINT) when changed_field_key='stage_id'; NULL otherwise. Safe-cast from raw text."
+        tests:
+          - relationships:
+              arguments:
+                to: ref('stg_pipedrive__stages')
+                field: stage_id
+                where: "changed_field_key = 'stage_id' and new_stage_id is not null"
+
+  - name: stg_pipedrive__stages
+    description: "Sales stages (id → name)"
+    columns:
+      - name: stage_id
+        description: "Stage identifier from Pipedrive (BIGINT)."
+        tests: [not_null, unique]
+      - name: stage_name
+        description: "Human-readable stage name."
+        tests: [not_null]
+    
+  - name: stg_pipedrive__stages_from_fields
+    description: "Stages parsed from the 'fields' seed (field_key = 'stage_id')."
+    columns:
+      - name: stage_id
+        description: "Numeric stage id derived from field_value_options[].id."
+        tests:
+          - not_null
+          - unique
+          - relationships:
+              arguments:
+                to: ref('map_stage_to_funnel')   # seed
+                field: stage_id                  # must exist in mapping
+
+      - name: stage_name
+        description: "Stage label derived from field_value_options[].label."
+        tests:
+          - not_null

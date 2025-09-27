@@ -1,0 +1,73 @@
+version: 2
+
+models:
+  - name: rep_sales_funnel_monthly
+    description: "Monthly counts of deals by funnel step."
+    columns:
+      - name: month
+        description: "First day of month (DATE) used to bucket events."
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('int_calendar_months')
+                field: month
+          - dbt_utils.expression_is_true:
+              arguments:
+                # Becomes: month = date_trunc('month', month)
+                expression: "= date_trunc('month', month)"
+
+      - name: kpi_name
+        description: "Display label for the funnel step (from mappings)."
+
+      - name: funnel_step
+        description: "Funnel step code (e.g., '1','2','2.1')."
+        tests: [not_null]
+
+      - name: deals_count
+        description: "Number of deals counted in that month & step (0 if none)."
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              arguments:
+                # Becomes: deals_count >= 0
+                expression: ">= 0"
+
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [month, funnel_step]
+
+seeds:
+  - name: map_stage_to_funnel
+    description: "Mapping Pipedrive stage_id → funnel step + display label + sort order."
+    columns:
+      - name: stage_id
+        description: "Pipedrive stage identifier (INT)."
+        tests: [not_null, unique]
+
+      - name: funnel_step
+        description: "Funnel step code (TEXT), e.g., '1','2', or sub-steps like '2.1'."
+        tests: [not_null]
+
+      - name: kpi_name
+        description: "Human-readable label for the step (e.g., 'Qualified Lead')."
+
+      - name: sort_order
+        description: "Numeric order for reporting (lower = earlier in funnel)."
+        tests: [not_null]
+
+  - name: map_activity_to_funnel
+    description: "Mapping activity type keys → funnel sub-steps."
+    columns:
+      - name: activity_type_key
+        description: "Stable key from activity_types.type (e.g., 'meeting', 'sc_2')."
+        tests: [not_null, unique]
+      - name: funnel_step
+        description: "Funnel sub-step code (TEXT), e.g., '2.1'."
+        tests: [not_null]
+      - name: kpi_name
+        description: "Display label for the sub-step (e.g., 'Sales Call 1')."
+      - name: sort_order
+        description: "Numeric ordering for sub-steps."
+        tests: [not_null]

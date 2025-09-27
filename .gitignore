@@ -1,0 +1,17 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+.env*
+# dbt
+target/
+dbt_packages/
+logs/
+dbt.log
+# OS/IDE
+.DS_Store
+.vscode/
+.idea/
+*.code-workspace
+# local data we don't ship
+raw_data/

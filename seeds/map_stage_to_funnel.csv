@@ -1,0 +1,10 @@
+stage_id,funnel_step,kpi_name,sort_order
+1,1,Lead Generation,10
+2,2,Qualified Lead,20
+3,3,Needs Assessment,30
+4,4,Proposal/Quote Preparation,40
+5,5,Negotiation,50
+6,6,Closing,60
+7,7,Implementation/Onboarding,70
+8,8,Follow-up/Customer Success,80
+9,9,Renewal/Expansion,90
