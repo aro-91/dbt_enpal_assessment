@@ -1,13 +1,17 @@
-# Python / venv
+# Python
 .venv/
 __pycache__/
 *.pyc
-.dbt/
-
-# dbt build artifacts
+.env*
+# dbt
 target/
-
-# editors
+dbt_packages/
+logs/
+dbt.log
+# OS/IDE
+.DS_Store
 .vscode/
 .idea/
-*.log
+*.code-workspace
+# local data we don't ship
+raw_data/
