@@ -1,0 +1,21 @@
+[sqlfluff]
+dialect = postgres
+templater = dbt
+
+# Trailing commas style
+[sqlfluff:layout:type:comma]
+line_position = trailing
+
+# Keywords in UPPERCASE
+[sqlfluff:rules:capitalisation.keywords]
+capitalisation_policy = upper
+
+# Identifiers (tables/columns/CTE/aliases) in lowercase
+[sqlfluff:rules:capitalisation.identifiers]
+extended_capitalisation_policy = lower
+
+# Line length
+[sqlfluff:rules:layout.long_lines]
+max_line_length = 100
+
+

@@ -1,0 +1,74 @@
+version: 2
+
+models:
+  - name: int_calendar_months
+    description: "Month spine from earliest event to current month (inclusive)."
+    columns:
+      - name: month
+        description: "First day of the month (DATE). Used to left-join so empty months appear with zeros."
+        tests: [not_null, unique]
+
+  - name: int_deal_stage_changes
+    description: "One row per *stage_id* change event (no dedup). Enriched with funnel mapping."
+    columns:
+      - name: deal_id
+        description: "Deal identifier (BIGINT)."
+        tests: [not_null]
+      - name: changed_at
+        description: "Exact timestamp when the stage change happened (TIMESTAMP)."
+        tests: [not_null]
+      - name: stage_id
+        description: "Stage ID after the change (BIGINT). Parsed safely from the raw change log."
+        tests: [not_null]
+      - name: month
+        description: "Month bucket derived from changed_at; first day of month (DATE)."
+        tests: [not_null]
+      - name: kpi_name
+        description: "Human-friendly label for the funnel step (from seed mapping), e.g., 'Negotiation'."
+      - name: funnel_step
+        description: "Funnel step code (TEXT). Supports sub-steps like '2.1' and '3.1'."
+        tests: [not_null]
+      - name: sort_order
+        description: "Numeric ordering helper for reports (INT). Lower values appear first."
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [deal_id, changed_at, stage_id]
+
+  - name: int_activity_calls
+    description: "Activity-derived funnel sub-steps by month (e.g., Sales Call 1 / 2). Includes only done/valid activities."
+    columns:
+      - name: deal_id
+        description: "Deal identifier (BIGINT)."
+        tests: [not_null]
+      - name: month_start
+        description: "Month bucket from activity timestamp; first day of month (DATE)."
+        tests: [not_null]
+      - name: kpi_name
+        description: "Human-friendly label for the sub-step (from activity mapping), e.g., 'Sales Call 1'."
+      - name: funnel_step
+        description: "Funnel step code (TEXT) for activity sub-steps, e.g., '2.1', '3.1'."
+        tests: [not_null]
+      - name: sort_order
+        description: "Numeric ordering helper for reports (INT)."
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [deal_id, month_start, funnel_step]
+
+  - name: int_funnel_events
+    description: "Unified event stream = stage transitions ∪ activity sub-steps. Normalizes month column."
+    columns:
+      - name: deal_id
+        description: "Deal identifier (BIGINT)."
+        tests: [not_null]
+      - name: month
+        description: "Month bucket; first day of month (DATE)."
+        tests: [not_null]
+      - name: kpi_name
+        description: "Label of the funnel step/sub-step."
+      - name: funnel_step
+        description: "Funnel step code (TEXT)."
+        tests: [not_null]
+      - name: sort_order
+        description: "Ordering helper for consistent report sorting."

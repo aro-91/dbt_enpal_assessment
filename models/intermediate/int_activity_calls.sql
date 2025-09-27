@@ -1,20 +1,14 @@
 {{ config(materialized='view') }}
 
-with src as (
-  select
-    activity.activity_id,
-    CASE WHEN  activity_types.name = 'Sales Call 1'
-         THEN '2.1'
-         WHEN  activity_types.name = 'Sales Call 2'
-         THEN '3.1'
-         END  as sales_stage_id,
-    activity.deal_id::bigint,
-    activity.due_at,
-    activity_types.name
-  from {{ ref('stg_pipedrive_activity') }} as activity
-  inner join {{ ref('stg_pipedrive_activity_types') }} as activity_types
-  on activity.type = activity_types.type
-  where activity.done is true
-  and activity_types.name in ('Sales Call 1', 'Sales Call 2')
-)
-select * from src
+-- Activity-based funnel sub-steps (e.g., Sales Call 1 / 2)
+SELECT
+    pipedrive_activity.deal_id,
+    date_trunc('month', pipedrive_activity.happened_at)::date AS month_start,
+    map_activity.kpi_name,
+    map_activity.funnel_step,
+    map_activity.sort_order
+FROM {{ ref('stg_pipedrive__activity') }} AS pipedrive_activity
+INNER JOIN {{ ref('map_activity_to_funnel') }} AS map_activity
+    ON pipedrive_activity.activity_type_key = map_activity.activity_type_key
+WHERE coalesce(pipedrive_activity.is_done, true) = true
+GROUP BY 1, 2, 3, 4, 5

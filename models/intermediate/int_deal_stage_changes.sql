@@ -1,15 +1,25 @@
-{{ config(materialized='view',
-    schema='public_pipedrive_analytics') }}
+{{ config(materialized='view') }}
 
-with src as (
-  select
-    deal_changes.deal_id,
-    stages.stage_id,
-    stages.stage_name,
-    deal_changes.changed_at
-  from {{ ref('stg_pipedrive_deal_changes') }} as deal_changes
-  inner join {{ ref('stg_pipedrive_stages') }} as stages
-  on deal_changes.new_value::bigint = stages.stage_id
-  where changed_field_key = 'stage_id'
+WITH base AS (
+    SELECT
+        deal_changes.deal_id,
+        -- keep raw event timestamp for tests
+        deal_changes.changed_at,
+        deal_changes.new_stage_id AS stage_id
+    FROM {{ ref('stg_pipedrive__deal_changes') }} AS deal_changes
+    WHERE
+        deal_changes.changed_field_key = 'stage_id'
+        AND deal_changes.new_stage_id IS NOT null
 )
-select * from src
+
+SELECT
+    b.deal_id,
+    b.changed_at,
+    b.stage_id,
+    date_trunc('month', b.changed_at)::date AS month,
+    map_stage_to_funnel.kpi_name,
+    map_stage_to_funnel.funnel_step,       -- TEXT (supports 2.1 / 3.1 etc.)
+    map_stage_to_funnel.sort_order
+FROM base AS b
+INNER JOIN {{ ref('map_stage_to_funnel') }} AS map_stage_to_funnel
+    ON b.stage_id = map_stage_to_funnel.stage_id
