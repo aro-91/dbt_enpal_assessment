@@ -1,0 +1,54 @@
+version: 2
+
+models:
+  - name: int_deal_stage_history
+    description: First time each deal entered each funnel stage.
+    columns:
+      - name: deal_id
+        tests: [not_null]
+      - name: stage_id
+        tests: [not_null]
+      - name: first_entered_at
+        tests: [not_null]
+
+  - name: int_activity_call_events
+    description: First Sales Call 1/2 per deal from completed activities.
+    columns:
+      - name: deal_id
+        tests: [not_null]
+      - name: call_name
+        tests:
+          - accepted_values:
+              arguments:
+                values: ["Sales Call 1","Sales Call 2"]
+      - name: first_call_ts
+        tests: [not_null]
+
+  - name: int_funnel_events
+    description: Unified funnel events (stages 1–9 + Sales Call 1/2).
+    columns:
+      - name: deal_id
+        tests: [not_null]
+      - name: occurred_at
+        tests: [not_null]
+      - name: kpi_name
+        tests:
+          - accepted_values:
+              arguments:
+                values:
+                  - "Lead Generation"
+                  - "Qualified Lead"
+                  - "Sales Call 1"
+                  - "Needs Assessment"
+                  - "Sales Call 2"
+                  - "Proposal/Quote Preparation"
+                  - "Negotiation"
+                  - "Closing"
+                  - "Implementation/Onboarding"
+                  - "Follow-up/Customer Success"
+                  - "Renewal/Expansion"
+      - name: funnel_step
+        tests:
+          - accepted_values:
+              arguments:
+                values: ["1","2","2.1","3","3.1","4","5","6","7","8","9"]

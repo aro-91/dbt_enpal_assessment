@@ -1,0 +1,73 @@
+version: 2
+
+
+models:
+
+  - name: stg_users
+    description: Table with user data 
+    columns:
+      - name: user_id
+        tests: [not_null, unique]
+      - name: user_email
+        tests: [not_null]
+
+  - name: stg_activity
+    description: Activity table with events data
+    columns:
+      - name: activity_id
+        description: Primary key for activity table
+        tests: [not_null, unique]
+      - name: activity_type_key
+        description: Short key for activity type
+        tests:
+          - not_null
+
+      - name: user_id
+        description: Foreign key to user table
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_users')
+              field: user_id
+      - name: deal_id
+        description: Foreign key to the deals table, Deal associated to the activity
+        tests:
+          - not_null
+      - name: is_done
+        description: Activity completion status flag
+        tests: [not_null]
+      - name: activity_ts
+        description: Timestamp of the activity
+        tests: [not_null]
+
+
+  - name: stg_activity_types
+    description: Table of activity types 
+    columns:
+      - name: activity_type_id
+        description: Primary key for activity type table
+        tests: [not_null, unique]
+      - name: activity_type_key
+        tests: [not_null, unique]
+
+
+  - name: stg_deal_changes
+    description: Table with deal field changes over time
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns: ["deal_id","change_ts","field_name"]
+    columns:
+      - name: deal_id
+        tests: [not_null]
+      - name: change_ts
+        tests: [not_null]
+
+
+
+  - name: stg_stages
+    description: Deals funnel stages
+    columns:
+      - name: stage_id
+        tests: [not_null, unique]
+
+
