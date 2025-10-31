@@ -1,0 +1,24 @@
+version: 2
+
+models:
+  - name: rep_sales_funnel_monthly
+    description: |
+      Monthly sales funnel report tracking deals across all pipeline stages.
+      Includes main funnel steps (1-9) and activity sub-steps (2.1, 3.1) for Sales Calls.
+      
+      Data shows:
+      - Deal progression through 9 main stages from Lead Generation to Renewal/Expansion
+      - Sales Call 1 activities (step 2.1) occurring during Qualified Lead stage
+      - Sales Call 2 activities (step 3.1) occurring during Needs Assessment stage
+      
+      Note: All deals in the dataset ultimately end with a lost_reason, indicating 
+      this may be test data or a historical snapshot of unsuccessful deals.
+    columns:
+      - name: month
+        description: First day of the month (YYYY-MM-DD format)
+      - name: kpi_name
+        description: Name of the funnel step or activity
+      - name: funnel_step
+        description: Numeric identifier for funnel position (1-9, with 2.1 and 3.1 for sub-steps)
+      - name: deals_count
+        description: Distinct count of deals that entered this funnel step in this month
