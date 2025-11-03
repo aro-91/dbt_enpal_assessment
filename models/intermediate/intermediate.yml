@@ -1,0 +1,36 @@
+version: 2
+
+models:
+  - name: int_activity_events
+    description: >
+      Combine Pipedrive activities with activity types and deals.
+    columns:
+      - name: deal_id
+        description: "Identifier of the related deal."
+        tests:
+          - not_null
+      - name: activity_type_name
+        description: "Readable name of the activity type."
+        tests:
+          - not_null
+      - name: activity_date
+        description: "Date of the activity (timestamp)."
+        tests:
+          - not_null
+
+  - name: int_stage_transitions
+    description: >
+      Represents transitions of deals between pipeline stages.
+    columns:
+      - name: deal_id
+        description: "Unique deal identifier."
+        tests:
+          - not_null
+      - name: stage_name
+        description: "Readable name of the pipeline stage."
+        tests:
+          - not_null
+      - name: change_time
+        description: "Timestamp of the stage change."
+        tests:
+          - not_null
