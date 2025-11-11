@@ -1,0 +1,16 @@
+version: 2
+
+models:
+  - name: int_deal_stage_progression
+    description: "Intermediate model combining stage changes and activity events into monthly deal funnel events"
+    columns:
+      - name: month
+        description: "Month of event"
+        tests:
+          - not_null
+      - name: funnel_step
+        description: "Funnel step name including Step 1, 2.1, etc."
+        tests:
+          - not_null
+      - name: deals_count
+        description: "Count of distinct deals in this funnel step and month"
