@@ -1,0 +1,72 @@
+version: 2
+
+models:
+  - name: stg_stage_changes
+    description: "Staging model for deal changes, only stage_id changes"
+    columns:
+      - name: deal_id
+        description: "ID of the deal"
+        tests:
+          - not_null
+      - name: change_month
+        description: "Month of the change"
+      - name: stage_id
+        description: "Stage ID as string"
+      - name: user_id
+        description: "User who made the change"
+
+  - name: stg_stages
+    description: "Staging model for stages mapping"
+    columns:
+      - name: stage_id
+        description: "Stage ID"
+        tests:
+          - not_null
+          - unique
+      - name: stage_name
+        description: "Stage name"
+
+  - name: stg_activity
+    description: "Staging model for activities"
+    columns:
+      - name: activity_id
+        description: "Activity ID"
+        tests:
+          - not_null
+          - unique
+      - name: deal_id
+        description: "Deal associated with activity"
+        tests:
+          - not_null
+      - name: type
+        description: "Activity type"
+      - name: due_date
+        description: "Due date of activity"
+      - name: done
+        description: "Activity completed or not"
+
+  - name: stg_activity_types
+    description: "Activity types mapping table"
+    columns:
+      - name: id
+        description: "Activity type ID"
+        tests:
+          - not_null
+          - unique
+      - name: funnel_step
+        description: "Mapped funnel step name"
+      - name: type
+        description: "Type key used in activity table"
+
+  - name: stg_users
+    description: "Staging model for users"
+    columns:
+      - name: user_id
+        description: "User ID"
+        tests:
+          - not_null
+          - unique
+      - name: user_name
+        description: "User name"
+      - name: email
+        description: "User email"

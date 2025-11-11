@@ -1,0 +1,19 @@
+version: 2
+
+models:
+  - name: rep_sales_funnel_monthly
+    description: "Monthly sales funnel report including all funnel steps with deal counts"
+    columns:
+      - name: month
+        description: "Month of the funnel step"
+        tests:
+          - not_null
+      - name: funnel_step
+        description: "Funnel step name, including Step 1, 2.1, etc."
+        tests:
+          - not_null
+      - name: deals_count
+        description: "Number of distinct deals in this funnel step and month"
+        tests:
+          - not_null
+
