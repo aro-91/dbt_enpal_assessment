@@ -1,0 +1,16 @@
+version: 2
+
+models:
+  - name: stg_stages
+    description: "Staging model for deal stages. This dimension table maps stage IDs to their descriptive names, essential for funnel analysis."
+    columns:
+      - name: stage_id
+        description: "The unique identifier for the stage."
+        tests:
+          - not_null
+          - unique
+      
+      - name: stage_name
+        description: "The descriptive name of the stage (e.g., 'Lead Generation', 'Negotiation')."
+        tests:
+          - not_null

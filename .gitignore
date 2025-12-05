@@ -1,0 +1,5 @@
+# dbt Auto-Generated Files
+target/
+dbt_modules/
+logs/
+.DS_Store

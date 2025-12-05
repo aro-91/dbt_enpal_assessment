@@ -1,0 +1,36 @@
+version: 2
+
+models:
+  - name: stg_activities
+    description: "The cleaned staging model for pipedrive CRM activities."
+    columns:
+      - name: activity_id
+        description: "The identifier for the activity."
+        tests:
+          - not_null
+      
+      - name: deal_id
+        description: "The ID of the related deal."
+        tests:
+          - not_null
+      
+      - name: user_id
+        description: "The ID of the user to whom the activity is assigned."
+        tests:
+          - not_null
+      
+      - name: activity_type
+        description: "The type of the activity (e.g., 'follow_up', 'meeting')."
+
+      - name: is_done
+        description: "Boolean flag indicating whether the activity is completed or not."
+
+      - name: due_at
+        description: "The date and time when the activity is due."
+
+    # Composite Unique Test: The combination of activity_id and deal_id must be unique.
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - activity_id
+            - deal_id

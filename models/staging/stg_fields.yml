@@ -1,0 +1,30 @@
+version: 2
+
+models:
+  - name: stg_fields
+    description: "Staging model for field definitions. Includes all field keys. JSON options are unnested into rows for mapping."
+    columns:
+      - name: field_id
+        description: "The unique identifier field definition."
+        tests:
+          - not_null
+      
+      - name: field_key
+        description: "The programmatic key of the field (e.g., 'stage_id', 'user_id', 'add_time')."
+      
+      - name: field_name
+        description: "The display name of the field (e.g., 'Stage', 'Owner')."
+      
+      - name: field_value_id
+        description: "The ID of the specific option (only populated for fields with options, like stages/lost reasons)."
+      
+      - name: field_value_label
+        description: "The label of the specific option (e.g., 'Lead Generation')."
+
+          
+    # This composite uniqueness test is for ensuring that each unnested option is uniquely identified by its field key and value ID.
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - field_key
+            - field_value_id

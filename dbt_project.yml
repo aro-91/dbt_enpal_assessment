@@ -5,6 +5,9 @@
 name: 'enpal_assessment_project'
 version: '1.0.0'
 
+vars:
+  surrogate_key_treat_nulls_as_empty_strings: True 
+
 # This setting configures which "profile" dbt uses for this project.
 profile: 'enpal_assessment_project'
 
@@ -29,8 +32,20 @@ clean-targets:         # directories to be removed by `dbt clean`
 # In this example config, we tell dbt to build all models in the example/
 # directory as views. These settings can be overridden in the individual model
 # files using the `{{ config(...) }}` macro.
+
 models:
   enpal_assessment_project:
-    # Config indicated by + and applies to all files under models/example/
-    +schema: pipedrive_analytics
+    # Varsayılanlar: Bütün modeller table materyalizasyonuna sahiptir.
     +materialized: table
+    
+    # 1. Staging Katmanı: Ana şemada kalır (profiles.yml'deki default şema, genelde 'public')
+    staging:
+      +schema: public # ÖNEMLİ: Profiles.yml'de hangi şemayı kullanıyorsanız onu yazın.
+
+    # 2. Intermediate Katmanı: Ana şemada kalır (public)
+    intermediate:
+      +schema: public
+
+    # 3. Marts Katmanı: Raporlama şemasına gider.
+    marts:
+      +schema: marts_analytics # Opsiyonel: Raporları ayrı tutmak için

@@ -1,0 +1,20 @@
+with source as (
+
+    select * from {{ source('postgres_public', 'users') }}
+
+),
+
+renamed as (
+
+    select
+
+        id::integer as user_id,
+        name::varchar(255) as user_name,
+        email::varchar(255) as user_email,
+        modified::timestamp as modified_at
+        
+    from source
+
+)
+
+select * from renamed

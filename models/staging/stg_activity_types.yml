@@ -1,0 +1,20 @@
+version: 2
+
+models:
+  - name: stg_activity_types
+    description: "Staging model for activity type references."
+    columns:
+      - name: activity_type_id
+        description: "Identifier for the activity type."
+
+      - name: activity_type_name
+        description: "Display name of the activity type (e.g., 'Sales Call 1')."
+      
+      - name: type
+        description: "Activity type (e.g., 'meeting', 'sc_2')."
+      
+      - name: is_active
+        description: "Boolean flag indicating if the activity type is currently active."
+        tests:
+          - accepted_values:
+              values: [True, False]

@@ -1,0 +1,30 @@
+version: 2
+
+models:
+  - name: rep_sales_funnel_monthly
+    description: "The final monthly sales funnel report, detailing the number of deals entering each defined funnel step from 1 to 9"
+    config:
+      materialized: table 
+    
+    columns:
+      - name: month
+        description: "The calendar month (truncated to the first day of the month) when the deal entered the stage."
+        tests:
+          - not_null
+      
+      - name: kpi_name
+        description: "The name of the KPI, mirroring the funnel step name."
+        tests:
+          - not_null
+      
+      - name: funnel_step
+        description: "The standardized, ordered funnel step (e.g., 'Step 2.1: Sales Call 1')."
+        tests:
+          - not_null
+      
+      - name: deals_count
+        description: "The count of unique deals that entered the respective funnel step during that month."
+        tests:
+          - not_null
+          - dbt_expectations.expect_column_values_to_be_of_type:
+              column_type: ['integer', 'numeric']

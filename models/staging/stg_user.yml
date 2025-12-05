@@ -1,0 +1,24 @@
+version: 2
+
+models:
+  - name: stg_users
+    description: "Staging model for user data."
+    columns:
+      - name: user_id
+        description: "The unique identifier for the user."
+        tests:
+          - not_null
+          - unique
+      
+      - name: user_name
+        description: "The full name of the user."
+        tests:
+          - not_null
+      
+      - name: user_email
+        description: "The email address of the user."
+        tests:
+          - not_null
+
+      - name: modified_at
+        description: "The last modification timestamp for the user record."

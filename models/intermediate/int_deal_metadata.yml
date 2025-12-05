@@ -1,0 +1,30 @@
+version: 2
+
+models:
+  - name: int_deal_metadata
+    description: "Intermediate model that aggregates non-time-series data for each deal, such as creation time and final owner."
+    columns:
+      - name: deal_id
+        description: "The unique identifier for the deal."
+        tests:
+          - not_null
+          - unique
+      
+      - name: created_at
+        description: "The timestamp when the deal was first created (based on the 'add_time' event)."
+        tests:
+          - not_null
+      
+      - name: closed_at
+        description: "The timestamp when the deal was marked as lost (based on the last 'lost_reason' event). NULL for open or won deals."
+      
+      - name: owner_user_id
+        description: "The ID of the last assigned owner for the deal."
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_users')
+              field: user_id
+      
+      - name: is_lost
+        description: "Boolean flag: TRUE if the deal has a recorded lost reason."

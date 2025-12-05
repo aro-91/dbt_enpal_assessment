@@ -1,0 +1,18 @@
+with source as (
+
+    select * from {{ source('postgres_public', 'stages') }}
+
+),
+
+renamed as (
+
+    select
+
+        stage_id::integer as stage_id,
+        stage_name::varchar(255) as stage_name
+        
+    from source
+
+)
+
+select * from renamed
