@@ -5,4 +5,15 @@ sources:
     database: postgres
     schema: public
     tables:
+      - name: stages
+        description: "Pipeline stages in the sales funnel"
       - name: activity
+        description: "Activities performed on deals (calls, meetings, etc.)"
+      - name: activity_types
+        description: "Lookup table for activity type definitions"
+      - name: deal_changes
+        description: "History of all changes made to deals"
+      - name: users
+        description: "Salespeople using the CRM"
+      - name: fields
+        description: "Custom field definitions"
