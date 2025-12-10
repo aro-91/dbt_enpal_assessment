@@ -1,0 +1,7 @@
+packages:
+  - package: dbt-labs/dbt_utils
+    version: 1.3.2 # Use the latest stable version
+  - package: metaplane/dbt_expectations
+    version: 0.10.10 # Use the latest stable version
+  - package: godatadriven/dbt_date
+    version: 0.17.0 # Use the latest stable version

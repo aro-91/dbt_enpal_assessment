@@ -1,0 +1,121 @@
+version: 2
+
+models:
+  - name: stg_deal_changes
+    description: "Staging model for deal changes with cleaned timestamps"
+    columns:
+      - name: deal_id
+        description: "Deal identifier"
+        tests:
+          - not_null
+      - name: change_time
+        description: "Timestamp when the change occurred"
+        tests:
+          - not_null
+      - name: changed_field_key
+        description: "Field that was changed"
+      - name: new_value
+        description: "New value after change"
+      - name: change_date
+        description: "Date extracted from change_time"
+
+  - name: stg_stages
+    description: "Staging model for sales funnel stages"
+    columns:
+      - name: stage_id
+        description: "Unique stage identifier"
+        tests:
+          - not_null
+          - unique
+      - name: stage_name
+        description: "Name of the stage"
+      - name: funnel_step
+        description: "Formatted funnel step name"
+
+  - name: stg_activity
+    description: "Staging model for activities"
+    columns:
+      - name: activity_id
+        description: "Unique activity identifier"
+        tests:
+          - not_null
+          # - unique  -- Found duplicates in source data
+      - name: activity_type_code
+        description: "Activity type code"
+      - name: assigned_to_user
+        description: "User assigned to the activity"
+      - name: deal_id
+        description: "Associated deal ID"
+      - name: is_done
+        description: "Whether activity is completed"
+      - name: due_timestamp
+        description: "Due timestamp for the activity"
+      - name: due_date
+        description: "Due date for the activity"
+
+  - name: stg_activity_types
+    description: "Staging model for activity types"
+    columns:
+      - name: activity_type_id
+        description: "Unique activity type ID"
+        tests:
+          - not_null
+          - unique
+      - name: activity_name
+        description: "Activity type name"
+        tests:
+          - not_null
+      - name: active
+        description: "Whether the activity type is active"
+        tests:
+          - not_null
+      - name: activity_type_code
+        description: "Activity type code"
+        tests:
+          - not_null
+
+  - name: stg_users
+    description: "Staging model for users/sales reps"
+    columns:
+      - name: user_id
+        description: "Unique user identifier"
+        tests:
+          - not_null
+          - unique
+      - name: user_name
+        description: "User full name"
+      - name: email
+        description: "User email"
+      - name: last_modified
+        description: "Timestamp of last modification"
+
+  - name: stg_fields
+    description: "Staging model for field metadata"
+    columns:
+      - name: field_id
+        description: "Unique field identifier"
+        tests:
+          - not_null
+          - unique
+      - name: field_key
+        description: "Field key"
+      - name: field_name
+        description: "Field name"
+      - name: field_value_options
+        description: "Field value options"
+
+  - name: stg_lost_reasons
+    description: "-- Staging model for lost reasons from fields metadata source table"
+    columns:
+      - name: lost_value_id
+        description: "Lost Value Identifier"
+        tests:
+          - not_null
+          - unique
+      - name: lost_value_label
+        description: "Lost Value Label"
+        tests:
+          - not_null
+          - unique
+      - name: field_row_id
+        description: "Unique field identifier"

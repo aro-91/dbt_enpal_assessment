@@ -1,0 +1,134 @@
+version: 2
+
+models:
+  - name: int_deal_creation
+    description: "Intermediate model tracking when deals were created"
+    columns:
+      - name: deal_id
+        description: "Unique deal identifier"
+        tests:
+          - not_null
+          - unique
+      - name: created_at
+        description: "Timestamp when deal was created"
+        tests:
+          - not_null
+      - name: created_date
+        description: "Date when deal was created"
+        tests:
+          - not_null
+      - name: created_month
+        description: "Month when deal was created (for aggregation)"
+        tests:
+          - not_null
+
+  - name: int_deal_stage_changes
+    description: "Intermediate model tracking all stage progressions for deals"
+    tests:
+      - stage_dates_increase:
+          arguments:
+            group_by: deal_id
+            sort_by: stage_id
+            date_col: stage_entered_at
+    columns:
+      - name: change_id
+        description: "Unique identifier for the stage change event (surrogate key)"
+        tests:
+          - unique
+          - not_null
+      - name: deal_id
+        description: "Deal identifier"
+        tests:
+          - not_null
+      - name: stage_entered_at
+        description: "Timestamp when deal entered this stage"
+        tests:
+          - not_null
+      - name: stage_entered_date
+        description: "Date when deal entered this stage"
+        tests:
+          - not_null
+      - name: stage_entered_month
+        description: "Month when deal entered this stage"
+        tests:
+          - not_null
+      - name: stage_id
+        description: "Stage identifier"
+        tests:
+          - accepted_values:
+              values: [1, 2, 3, 4, 5, 6, 7, 8, 9]
+      - name: stage_name
+        description: "Stage name"
+        tests:
+          - not_null
+      - name: funnel_step
+        description: "Formatted funnel step"
+        tests:
+          - not_null
+
+  - name: int_sales_call_1
+    description: "Intermediate model tracking Sales Call 1 events"
+    columns:
+      - name: deal_id
+        description: "Deal identifier"
+        tests:
+          - not_null
+          - unique
+      - name: first_sc1_date
+        description: "Date of the first sales call 1"
+        tests:
+          - not_null
+      - name: first_sc1_month
+        description: "Month of the first sales call 1"
+        tests:
+          - not_null
+      - name: stage_name
+        description: "Stage name (Sales Call 1)"
+        tests:
+          - not_null
+      - name: funnel_step
+        description: "Funnel Step (Sales Call 1)"
+        tests:
+          - not_null
+      - name: stage_id
+        description: "Stage ID (Sales Call 1)"
+        tests:
+          - not_null
+      - name: sc1_count
+        description: "Count of Sales Call 1 events Per Deal ID"
+        tests:
+          - not_null
+
+  - name: int_sales_call_2
+    description: "Intermediate model tracking Sales Call 2 events"
+    columns:
+      - name: deal_id
+        description: "Deal identifier"
+        tests:
+          - not_null
+          - unique
+      - name: first_sc2_date
+        description: "Date of the first sales call 2"
+        tests:
+          - not_null
+      - name: first_sc2_month
+        description: "Month of the first sales call 2"
+        tests:
+          - not_null
+      - name: stage_name
+        description: "Stage name (Sales Call 2)"
+        tests:
+          - not_null
+      - name: funnel_step
+        description: "Funnel Step (Sales Call 2)"
+        tests:
+          - not_null
+      - name: stage_id
+        description: "Stage ID (Sales Call 2)"
+        tests:
+          - not_null
+      - name: sc2_count
+        description: "Count of Sales Call 2 events Per Deal ID"
+        tests:
+          - not_null
+

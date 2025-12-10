@@ -5,4 +5,9 @@ sources:
     database: postgres
     schema: public
     tables:
+      - name: deal_changes
       - name: activity
+      - name: activity_types
+      - name: stages
+      - name: users
+      - name: fields
