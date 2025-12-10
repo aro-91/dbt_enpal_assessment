@@ -1,0 +1,100 @@
+version: 2
+
+models:
+  - name: stg_deal_changes
+    description: "Record of changes happened to all deals, such as a change in the user managing it or in the deal stage."
+    columns:
+      - name: deal_id
+        description: "Unique identifier for a deal."
+        tests:
+          - not_null
+
+      - name: changed_field_key
+        description: "Field that has changed its value."
+        tests: 
+          - not null
+
+      - name: change_time
+        description: "Recorded timestamp when the change happened."
+        tests: 
+          - not null
+
+      - name: new_value
+        description: "New value assigned to the field after the change happened."
+        tests: 
+          - not null
+
+  - name: stg_activity
+    description: "Tasks assigned to users with respect to deals. Tracks pending and scheduled communications between the agents [users] and the clients."
+    columns:
+      - name: activity_id
+        description: "Identifier for each task to be made by a user on a deal."
+
+      - name: type 
+        description: "Code used to refer to the type of activity."
+
+      - name: assigned_to_user
+        description: "User_id of the employee this activity was assigned to."
+
+      - name: deal_id
+        description: "Deal_id this activity had to be done on."
+
+      - name: done
+        description: "Boolean which tracks whether the activity was completed or not."
+
+      - name: due_to
+        description: "Timestamp by when the activity had to be performed by the user."
+
+  - name: stg_activity_types
+    description: "Mapping of activity type code and activity type."
+    columns:
+      - name: id 
+        description: "Unique identifier for activity type table."
+
+      - name: name
+        description: "Name of the activity type."
+
+      - name: active
+        description: "Boolean flag whether the activity type is active or not in the CRM tool."
+
+      - name: type
+        description: "Activity type code. This is used in other tables like activity as Foreign Key and will be used for the join."
+
+  - name: stg_fields 
+    description: "Information on custom fields made in the CRM tool."
+    columns: 
+      - name: id
+        description: "Unique identifier for custom fields."
+
+      - name: field_key 
+        description: "Identifier key for the custom field."
+
+      - name: name
+        description: "Name of the field as it shows in the CRM tool."
+
+      - name: field_value_options
+        description: "List in JSON format of available options for certain specific custom fields."
+
+  - name: stg_stages
+    description: "Dimension table. Mapping of stage_id to stage_name."
+    columns: 
+      - name: stage_id
+        description: "Unique identifier for each stage. Ordered key."
+
+      - name: stage_name
+        description: "Name of the stage as it appears in the CRM Tool."
+
+  - name: stg_users
+    description: "Table containing all the data on users (agents) who perform activities and manage the deals."
+    columns:
+      - name: id
+        description: "Unique identifier for users."
+
+      - name: name
+        description: "Name of the user."
+
+      - name: email
+        description: "Email of the user."
+
+      - name: modified
+        description: "Timestamp when the user was last modified."

@@ -1,0 +1,25 @@
+version: 2
+
+models:
+  - name: rep_sales_funnel_monthly
+    description: "Monthly aggregated count of deals that went through each of the funnel stages."
+    columns:
+      - name: month
+        description: "Month when the stage change happened."
+        tests:
+          - not_null
+
+      - name: kpi_name
+        description: "Name of the step in the funnel. Comes from stages table and activity_types in CRM data source."
+        tests: 
+          - not null
+
+      - name: funnel_step
+        description: "Step number on the funnel. Comes from stage_id in deal_changes and as a custom stage for activity data in CRM."
+        tests: 
+          - not null
+
+      - name: deals_count
+        description: "Count of rows for that month in that particular funnel step."
+        tests: 
+          - not null

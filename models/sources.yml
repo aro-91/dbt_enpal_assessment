@@ -1,8 +1,20 @@
 version: 2
 
 sources:
-  - name: postgres_public
+  - name: crm
     database: postgres
     schema: public
     tables:
       - name: activity
+        description: "CRM activity records such as calls, emails, and tasks."
+      - name: activity_types
+        description: "Mapping of activity code to activity name."
+      - name: deal_changes
+        description: "CRM deal changes records such as change in stage, user or information on lost deals."
+      - name: fields
+        description: "JSON data on custom fields created in CRM."
+      - name: stages
+        description: "Mapping of stage_id to stage_name."
+      - name: users
+        description: "Data on employees or agents managing the deals and activities."
+

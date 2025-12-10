@@ -1,0 +1,25 @@
+version: 2
+
+models:
+  - name: dwh_deal_changes_activity
+    description: "Union of stg_deal_changes and stg_activity. This table has all the changes we need for the funnel from both data sources."
+    columns:
+      - name: deal_id
+        description: "Unique identifier for a deal."
+        tests:
+          - not_null
+
+      - name: stage_id
+        description: "Unique identifier for the stage. This is a combination of stage_id from stages table and newly defined stages 2.1 and 3.1 for the changes coming from the activity table."
+        tests: 
+          - not null
+
+      - name: stage_name
+        description: "Recorded timestamp when the change happened."
+        tests: 
+          - not null
+
+      - name: change_time
+        description: "New value assigned to the field after the change happened."
+        tests: 
+          - not null
