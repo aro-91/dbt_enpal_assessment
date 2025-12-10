@@ -1,0 +1,52 @@
+version: 2
+
+models:
+  - name: int_deal_stage_events
+    description: "Intermediate model tracking when deals enter each pipeline stage. Each row represents a deal entering a specific stage at a specific time."
+    columns:
+      - name: deal_id
+        description: "ID of the deal"
+        tests:
+          - not_null
+      - name: change_timestamp
+        description: "Timestamp when the deal entered this stage"
+        tests:
+          - not_null
+      - name: stage_id
+        description: "ID of the stage the deal entered"
+        tests:
+          - not_null
+      - name: stage_name
+        description: "Name of the stage (e.g., Lead Generation, Qualified Lead, Closing)"
+      - name: event_month
+        description: "Month when the stage transition occurred (format: YYYY-MM)"
+        tests:
+          - not_null
+
+  - name: int_deal_activity_events
+    description: "Intermediate model tracking completed sales call activities (Sales Call 1 and Sales Call 2) linked to deals."
+    columns:
+      - name: deal_id
+        description: "ID of the deal this activity is linked to"
+        tests:
+          - not_null
+      - name: activity_timestamp
+        description: "Timestamp when the activity was due/completed"
+        tests:
+          - not_null
+      - name: activity_type
+        description: "Name of the activity type"
+        tests:
+          - not_null
+      - name: is_done
+        description: "Boolean flag for completed activities"
+        tests:
+          - not_null
+      - name: event_month
+        description: "Month when the activity occurred (format: YYYY-MM)"
+        tests:
+          - not_null
+      - name: activity_name
+        description: "Human-readable name of the activity (Sales Call 1 or Sales Call 2)"
+        tests:
+          - not_null
