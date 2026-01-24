@@ -1,0 +1,67 @@
+version: 2
+
+models:
+  - name: int_deal_stages_history
+    description: >
+      Intermediate model capturing the history of deal stage changes.
+      Built incrementally from stg_deal_changes to avoid duplicates
+      and handle late-arriving data. Used for tracking when deals entered specific stages.
+    columns:
+      - name: deal_change_id
+        description: "{{ doc('deal_change_id') }}"
+        tests:
+          - not_null
+      - name: deal_id
+        description: "{{ doc('deal_id') }}"
+      - name: stage_started_at
+        description: "{{ doc('change_time') }}"
+      - name: changed_field_key
+        description: "{{ doc('changed_field_key') }}"
+      - name: stage
+        description: "{{ doc('stage_id') }}"
+
+  - name: int_field_options
+    description: >
+      Intermediate model unnesting Pipedrive field value options from
+      stg_pipedrive_fields. Each row corresponds to a possible
+      option for a field (option_id, option_label).
+    columns:
+      - name: field_id
+        description: "{{ doc('field_id') }}"
+        tests:
+          - not_null
+      - name: field_key
+        description: "{{ doc('field_key') }}"
+      - name: option_id
+        description: "{{ doc('option_id') }}"
+      - name: option_label
+        description: "{{ doc('option_label') }}"
+
+  - name: int_sales_call_history
+    description: >
+      Intermediate model mapping deals in stage 2 or 3 to their corresponding
+      sales call activities. Produces funnel steps 2.1 (Sales Call 1) and 3.1 (Sales Call 2).
+    columns:
+      - name: deal_id
+        description: "{{ doc('deal_id') }}"
+      - name: month_changed
+        description: "{{ doc('change_time') }}"
+      - name: activity_type_name
+        description: "{{ doc('activity_type_name') }}"
+      - name: funnel_step
+        description: "{{ doc('funnel_step') }}"
+
+
+  - name: int_activity_history
+    description: >
+      Intermediate model mapping deals in stage 2 or 3 to their corresponding
+      sales call activities. Produces funnel steps 2.1 (Sales Call 1) and 3.1 (Sales Call 2).
+    columns:
+      - name: deal_id
+        description: "{{ doc('deal_id') }}"
+      - name: month_changed
+        description: "{{ doc('change_time') }}"
+      - name: activity_type_name
+        description: "{{ doc('activity_type_name') }}"
+      - name: funnel_step
+        description: "{{ doc('funnel_step') }}"
