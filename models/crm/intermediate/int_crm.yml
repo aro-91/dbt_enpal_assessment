@@ -1,30 +1,59 @@
 version: 2
 
 models:
+  - name: int_deal_stages_latest
+    description: >
+      Intermediate model to provide the latest of stage of all deals.
+    columns:
+      - name: deal_id
+        description: "{{ doc('deal_id') }}"
+        tests:
+          - not_null
+      - name: user_id
+        description: "{{ doc('user_id') }}"
+      - name: stage_id
+        description: "{{ doc('stage_id') }}"
+      - name: stage_name
+        description: "{{ doc('stage_name') }}"
+      - name: is_lost_deal
+        description: "{{ doc('is_lost_deal') }}"
+      - name: stage_start_time
+        description: "{{ doc('stage_start_time') }}"
+      - name: stage_end_time
+        description: "{{ doc('stage_end_time') }}"
+      - name: stage_duration_in_days
+        description: "{{ doc('stage_duration_in_days') }}"
+
   - name: int_deal_stages_history
     description: >
-      Intermediate model capturing the history of deal stage changes.
+      Intermediate model to provide the history of deal stage changes.
       Built incrementally from stg_deal_changes to avoid duplicates
       and handle late-arriving data. Used for tracking when deals entered specific stages.
     columns:
-      - name: deal_change_id
-        description: "{{ doc('deal_change_id') }}"
-        tests:
-          - not_null
       - name: deal_id
         description: "{{ doc('deal_id') }}"
-      - name: stage_started_at
-        description: "{{ doc('change_time') }}"
+        tests:
+          - not_null
+      - name: user_id
+        description: "{{ doc('user_id') }}"
       - name: changed_field_key
         description: "{{ doc('changed_field_key') }}"
-      - name: stage
+      - name: stage_id
         description: "{{ doc('stage_id') }}"
+      - name: stage_name
+        description: "{{ doc('stage_name') }}"
+      - name: is_lost_deal
+        description: "{{ doc('is_lost_deal') }}"
+      - name: stage_start_time
+        description: "{{ doc('stage_start_time') }}"
+      - name: stage_end_time
+        description: "{{ doc('stage_end_time') }}"
+      - name: stage_duration_in_days
+        description: "{{ doc('stage_duration_in_days') }}"
 
   - name: int_field_options
     description: >
-      Intermediate model unnesting Pipedrive field value options from
-      stg_pipedrive_fields. Each row corresponds to a possible
-      option for a field (option_id, option_label).
+      Intermediate model to provide unnested field value options from stg_fields.
     columns:
       - name: field_id
         description: "{{ doc('field_id') }}"
@@ -32,10 +61,10 @@ models:
           - not_null
       - name: field_key
         description: "{{ doc('field_key') }}"
-      - name: option_id
-        description: "{{ doc('option_id') }}"
-      - name: option_label
-        description: "{{ doc('option_label') }}"
+      - name: label_id
+        description: "{{ doc('label_id') }}"
+      - name: label_value
+        description: "{{ doc('label_value') }}"
 
   - name: int_sales_call_history
     description: >

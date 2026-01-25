@@ -17,8 +17,8 @@ models:
         description: "{{ doc('is_done') }}"
       - name: due_to_at
         description: "{{ doc('due_to_at') }}"
-      - name: activity_type
-        description: "{{ doc('activity_type') }}"
+      - name: activity_type_category
+        description: "{{ doc('activity_type_category') }}"
         test:
             - not_null
             - accepted_values:
@@ -47,7 +47,7 @@ models:
       - name: deal_id
         description: "{{ doc('deal_id') }}"
       - name: changed_at
-        description: "{{ doc('changed_at') }}"
+        description: "{{ doc('stage_start_time') }}"
       - name: changed_field_key
         description: "{{ doc('changed_field_key') }}"
       - name: new_value

@@ -14,8 +14,8 @@ SELECT
     , deal_id
     , is_done
     , due_to_at
-    , activity_type
-FROM {{ ref('stg_pipedrive_activity') }}
+    , activity_type_category
+FROM {{ ref('stg_activity') }}
 {% if is_incremental() %}
     -- process only recent activities to reduce volume
     WHERE due_to_at >= current_date - interval '{{ threshold_days }} day'

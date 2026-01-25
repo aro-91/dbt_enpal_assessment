@@ -4,5 +4,5 @@ SELECT
     CAST(deal_id AS TEXT) AS deal_id,
     CAST(done AS BOOLEAN) AS is_done,
     CAST(due_to AS TIMESTAMP) AS due_to_at,
-    CAST(type AS TEXT) AS activity_type
+    CAST(type AS TEXT) AS activity_type_category
 FROM {{ source('pipedrive','activity') }}

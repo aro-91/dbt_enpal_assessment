@@ -1,24 +1,20 @@
 version: 2
 
 models:
-  - name: mrt_rep_sales_funnel_monthly
+  - name: mart_rep_sales_funnel_monthly
     description: >
       Monthly reporting model for the sales funnel.
-      Aggregates deal stage progressions and call funnel activities into
-      standard funnel KPIs, from Lead Generation through Renewal/Expansion.
-
-      A single deal can appear in multiple funnel steps during the same
-      month, so the number of deals is not unique across funnel steps
+      Aggregates deal stages and call funnel activities into
+      standard funnel KPIs, from Lead Generation to Renewal/Expansion.
+      A deal_id might appear in multiple steps during the same
+      month, therefore the number of deals is not unique across funnel steps.
 
     columns:
       - name: month_reported
         description: "{{ doc('month_name') }}"
-
       - name: kpi_name
         description: "{{ doc('kpi_name') }}"
-
       - name: funnel_step
         description: "{{ doc('funnel_step') }}"
-
       - name: deals_count
         description: "{{ doc('deals_count') }}"

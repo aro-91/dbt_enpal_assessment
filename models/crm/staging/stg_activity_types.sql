@@ -1,7 +1,7 @@
 SELECT
     CAST(id AS TEXT) AS activity_type_id,
     CAST(name AS TEXT) AS activity_type_name,
-    CAST(type AS TEXT) AS activity_type_group,
+    CAST(type AS TEXT) AS activity_type_category,
     CASE
       WHEN LOWER(active) = 'yes' THEN TRUE
       WHEN LOWER(active) = 'no'  THEN FALSE
