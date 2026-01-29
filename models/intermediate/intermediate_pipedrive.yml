@@ -1,0 +1,48 @@
+version: 2
+
+models:
+  - name: int_deal_created
+    description: "One row per deal with created_at derived from deal_changes (changed_field_key = 'add_time')."
+    columns:
+      - name: deal_id
+        tests: [not_null, unique]
+      - name: created_at
+        tests: [not_null]
+      - name: created_month
+        tests: [not_null]
+
+  - name: int_deal_stage_events
+    description: "Deal stage entry events derived from deal_changes (changed_field_key = 'stage_id')."
+    columns:
+      - name: deal_id
+        tests: [not_null]
+      - name: stage_entered_at
+        tests: [not_null]
+      - name: stage_entered_month
+        tests: [not_null]
+      - name: stage_id
+        tests: [not_null]
+      - name: stage_name
+        tests: [not_null]
+
+  - name: int_sales_call_events
+    description: >
+      Sales call events derived from completed activities. Maps meeting -> Sales Call 1 (2.1),
+      sc_2 -> Sales Call 2 (3.1).
+    columns:
+      - name: activity_sk
+        tests: [not_null, unique]
+      - name: deal_id
+        tests: [not_null]
+      - name: event_at
+        tests: [not_null]
+      - name: event_month
+        tests: [not_null]
+      - name: kpi_name
+        tests: [not_null]
+      - name: funnel_step
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['2.1', '3.1']

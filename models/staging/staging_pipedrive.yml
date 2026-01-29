@@ -1,0 +1,148 @@
+version: 2
+
+models:
+  - name: stg_activity
+    description: >
+      Staged Pipedrive activities. Includes typecasting, consistent naming, and deduplication of exact
+      duplicates from the raw activity table.
+    columns:
+      - name: activity_sk
+        description: >
+          Surrogate key uniquely identifying a staged activity record. Generated from the staging grain
+          columns (activity_id, deal_id, activity_type_key, due_at, assigned_to_user_id, is_done).
+        tests:
+          - not_null
+          - unique
+      - name: activity_id
+        description: "Identifier of the activity record from the source system (not guaranteed unique in raw; deduped in staging)."
+        tests:
+          - not_null
+      - name: activity_type_key
+        description: "Activity type key (joins to stg_activity_types.activity_type_key). Examples: meeting, sc_2."
+        tests:
+          - not_null
+      - name: assigned_to_user_id
+        description: "User ID the activity is assigned to (joins to stg_users.user_id)."
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_users')
+                field: user_id
+      - name: deal_id
+        description: "Deal identifier the activity is linked to."
+        tests:
+          - not_null
+      - name: is_done
+        description: "Whether the activity has been completed."
+        tests:
+          - not_null
+      - name: due_at
+        description: "Timestamp when the activity is/was due."
+        tests:
+          - not_null
+
+  - name: stg_activity_types
+    description: >
+      Staged activity type dictionary. Normalizes the Yes/No active flag to boolean and standardizes naming.
+    columns:
+      - name: activity_type_id
+        description: "Identifier of the activity type."
+        tests:
+          - not_null
+          - unique
+      - name: activity_type_name
+        description: "Human-readable activity type name."
+        tests:
+          - not_null
+      - name: activity_type_key
+        description: "Key used by activities to reference the type (joins to stg_activity.activity_type_key)."
+        tests:
+          - not_null
+          - unique
+      - name: is_active
+        description: "Boolean flag derived from the raw Yes/No field."
+        tests:
+          - not_null
+
+  - name: stg_deal_changes
+    description: >
+      Staged deal change event log. Typecasts columns, standardizes naming, and removes exact duplicate
+      change events from the raw data.
+    columns:
+      - name: deal_id
+        description: "Deal identifier."
+        tests:
+          - not_null
+      - name: changed_at
+        description: "Timestamp when the change occurred."
+        tests:
+          - not_null
+      - name: changed_field_key
+        description: "Field key that changed (e.g., stage_id, user_id, add_time, lost_reason)."
+        tests:
+          - not_null
+      - name: new_value
+        description: "New value as text (may represent IDs or timestamps, stored as text because it contains mixed types depending on changed_field_key)."
+        tests:
+          - not_null
+
+  - name: stg_fields
+    description: >
+      Field metadata and enumerated option mappings. Used to interpret deal_changes.changed_field_key values
+      and map numeric codes to labels via field_value_options.
+    columns:
+      - name: field_id
+        description: "Identifier of the field."
+        tests:
+          - not_null
+          - unique
+      - name: field_key
+        description: "Stable key for the field (e.g., stage_id, lost_reason)."
+        tests:
+          - not_null
+          - unique
+      - name: field_name
+        description: "Human-readable field name."
+        tests:
+          - not_null
+      - name: field_value_options
+        description: "JSONB array of {id,label} for enumerated fields. Null for non-enumerated fields."
+
+  - name: stg_stages
+    description: >
+      Deal stages dimension. In this dataset, stage_id 1..9 map directly to the requested funnel steps.
+    columns:
+      - name: stage_id
+        description: "Stage identifier."
+        tests:
+          - not_null
+          - unique
+          - accepted_values:
+              arguments:
+                values: [1, 2, 3, 4, 5, 6, 7, 8, 9]
+      - name: stage_name
+        description: "Stage label."
+        tests:
+          - not_null
+
+  - name: stg_users
+    description: "Users dimension (owners/assignees)."
+    columns:
+      - name: user_id
+        description: "User identifier."
+        tests:
+          - not_null
+          - unique
+      - name: user_name
+        description: "User full name."
+        tests:
+          - not_null
+      - name: user_email
+        description: "User email address."
+        tests:
+          - not_null
+      - name: modified_at
+        description: "Last modified timestamp for the user record."
+        tests:
+          - not_null

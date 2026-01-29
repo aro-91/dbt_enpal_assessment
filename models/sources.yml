@@ -1,8 +1,101 @@
 version: 2
 
 sources:
-  - name: postgres_public
+  - name: pipedrive
     database: postgres
     schema: public
     tables:
       - name: activity
+        description: "Pipedrive activities linked to deals; includes activity type, assignee, completion flag, and due timestamp."
+        columns:
+          - name: activity_id
+            description: "Primary identifier of the activity record."
+            tests: [not_null]
+          - name: type
+            description: "Activity type key."
+            tests: [not_null]
+          - name: assigned_to_user
+            description: "User ID of the assignee."
+            tests: [not_null]
+          - name: deal_id
+            description: "Deal identifier this activity is linked to."
+            tests: [not_null]
+          - name: done
+            description: "Whether the activity was completed."
+            tests: [not_null]
+          - name: due_to
+            description: "Timestamp when the activity is/was due."
+            tests: [not_null]
+
+      - name: activity_types
+        description: "Dictionary of activity types (human names + active flag). Join key is activity_types.type."
+        columns:
+          - name: id
+            description: "Identifier of the activity type."
+            tests: [not_null, unique]
+          - name: name
+            description: "Display name of the activity type."
+            tests: [not_null]
+          - name: active
+            description: "Whether the activity type is active. Values are Yes/No in this dataset."
+            tests: [not_null]
+          - name: type
+            description: "Activity type key."
+            tests: [not_null, unique]
+
+      - name: deal_changes
+        description: "Event log of changes on deals (stage changes, owner changes, created time, lost reason)."
+        columns:
+          - name: deal_id
+            description: "Deal identifier."
+            tests: [not_null]
+          - name: change_time
+            description: "Timestamp when the change occurred."
+            tests: [not_null]
+          - name: changed_field_key
+            description: "Which field changed (e.g., stage_id, user_id, add_time, lost_reason)."
+            tests: [not_null]
+          - name: new_value
+            description: "New value after the change (stored as text; may represent IDs or timestamps)."
+            tests: [not_null]
+
+      - name: fields
+        description: "Field metadata and option mappings for enumerated fields."
+        columns:
+          - name: id
+            description: "Identifier of the field."
+            tests: [not_null, unique]
+          - name: field_key
+            description: "Stable key for the field."
+            tests: [not_null, unique]
+          - name: name
+            description: "Field name."
+            tests: [not_null]
+          - name: field_value_options
+            description: "JSONB array of {id,label} pairs for enumerated fields (e.g., stage_id, lost_reason)."
+
+      - name: stages
+        description: "Deal stages. In this dataset, stages correspond to the requested funnel steps 1-9."
+        columns:
+          - name: stage_id
+            description: "Stage identifier."
+            tests: [not_null, unique]
+          - name: stage_name
+            description: "Stage name (maps to funnel KPI name)."
+            tests: [not_null]
+
+      - name: users
+        description: "Pipedrive users (owners/assignees)."
+        columns:
+          - name: id
+            description: "User identifier."
+            tests: [not_null, unique]
+          - name: name
+            description: "User full name."
+            tests: [not_null]
+          - name: email
+            description: "User email."
+            tests: [not_null]
+          - name: modified
+            description: "Modified timestamp for the user record."
+            tests: [not_null]

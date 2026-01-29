@@ -33,4 +33,14 @@ models:
   enpal_assessment_project:
     # Config indicated by + and applies to all files under models/example/
     +schema: pipedrive_analytics
-    +materialized: table
+    +persist_docs:
+      relation: true
+      columns: true
+    staging:
+      +materialized: view
+
+    intermediate:
+      +materialized: view
+
+    marts:
+      +materialized: table

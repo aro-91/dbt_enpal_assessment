@@ -1,0 +1,70 @@
+version: 2
+
+models:
+  - name: rep_sales_funnel_monthly
+    description: >
+      Monthly view of the sales funnel showing how many deals reached each funnel step.
+      Each row represents the number of distinct deals that entered a specific funnel step
+      during a given calendar month.
+
+      Funnel steps 1 to 9 are based on deal stage changes in the CRM.
+      Funnel steps 2.1 (Sales Call 1) and 3.1 (Sales Call 2) are based on completed sales call activities
+      linked to deals.
+
+      A deal can appear in multiple funnel steps and across multiple months as it progresses
+      through the sales funnel.
+    columns:
+      - name: month
+        description: >
+          Calendar month in which the deal entered the funnel step.
+          Represented as the first day of the month (YYYY-MM-01).
+        tests:
+          - not_null
+
+      - name: kpi_name
+        description: >
+          Human-readable name of the funnel step or sales activity.
+          Examples include:
+          - Lead Generation
+          - Qualified Lead
+          - Sales Call 1
+          - Needs Assessment
+          - Sales Call 2
+          - Proposal/Quote Preparation
+          - Negotiation
+          - Closing
+          - Implementation/Onboarding
+          - Follow-up/Customer Success
+          - Renewal/Expansion
+        tests:
+          - not_null
+
+      - name: funnel_step
+        description: >
+          Funnel step identifier indicating the position in the sales funnel.
+          Steps 1 to 9 correspond to CRM deal stages.
+          Step 2.1 represents the first completed sales call.
+          Step 3.1 represents the second completed sales call.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['1', '2', '2.1', '3', '3.1', '4', '5', '6', '7', '8', '9']
+
+      - name: deals_count
+        description: >
+          Number of distinct deals that entered the given funnel step during the month.
+          Each deal is counted at most once per funnel step per month, even if it triggered
+          multiple related events.
+        tests:
+          - not_null
+          - dynamic_threshold:
+              arguments:
+                column_name: deals_count
+                date_column: month
+                group_by_column: funnel_step
+                time_period_unit_historical: month
+                time_period_value_historical: 6
+                time_period_unit_test: month
+                time_period_value_test: 1
+                upper_multiplier: 2.0
