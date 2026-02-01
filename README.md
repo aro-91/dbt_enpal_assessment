@@ -107,6 +107,12 @@ Instead of hard-coding allowed values:
 - No deals reached Step 2.1 (Sales Call 1) or Step 3.1 (Sales Call 2) during the observed period.
 - The `activity_id` appears to be reliably unique only for completed activities (`is_done = true`).
 
+## Next steps & improvements
+
+- **Incremental processing:** As `deal_changes` and `activity` tables grow, intermediate event models can be converted to incremental models using a timestamp watermark (e.g., `stage_entered_at`, `task_executed_at`) with a small lookback window to handle late-arriving updates.
+- **More metadata-driven tests:** Extend custom tests that validate change events against Pipedrive metadata (`fields`). This reduces hard-coded assumptions and detects upstream configuration changes early.
+- **Improved observability:** Add source freshness checks and anomaly detection on monthly funnel counts to catch pipeline issues earlier.
+
 ## Setup
 
 1. Download Docker Desktop (if you don’t have installed) using the official website, install and launch.
