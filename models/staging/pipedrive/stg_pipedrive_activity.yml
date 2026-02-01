@@ -1,0 +1,37 @@
+version: 2
+
+models:
+  - name: stg_pipedrive_activity
+    description: Staging model for Pipedrive activities. Each row represents a sales activity linked to a deal, such as calls or meetings, sourced from the activity table.
+
+    columns:
+      - name: activity_id
+        description: Unique identifier of the activity.
+        data_type: integer
+        tests:
+          - not_null
+          - unique
+    
+      - name: deal_id
+        description: Unique identifier of the deal associated with the activity.
+        data_type: integer
+        tests:
+          - not_null         
+
+      - name: is_done
+        description: Indicates whether the activity has been completed. for duplication reasons, only done activities are kept. 
+        data_type: boolean
+        tests:
+          - not_null
+
+      - name: task_type
+        description: Type of the activity (e.g. call, meeting, custom activity).
+        data_type: varchar
+        tests:
+          - not_null
+
+      - name: due_to_at
+        description: Timestamp when the activity was due or scheduled.
+        data_type: timestamp
+        tests:
+          - not_null

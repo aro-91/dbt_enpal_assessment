@@ -1,0 +1,41 @@
+version: 2
+
+models:
+  - name: rep_sales_funnel_monthly
+    description: Reporting mart for monthly sales funnel metrics. Aggregates distinct deals by month and funnel step, combining stage-entry events
+      with activity-based events (e.g., Sales Call 1/2).
+      Grain is based on month, kpi_name, and funnel_step.
+
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - month
+            - kpi_name
+            - funnel_step
+
+    columns:
+      - name: month
+        description: Month (date) of the funnel event.
+        data_type: date
+        tests:
+          - not_null
+
+      - name: kpi_name
+        description: Name of the KPI represented by this table.
+        data_type: varchar
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['deals_by_funnel_step']
+
+      - name: funnel_step
+        description: Funnel step label used for reporting and ordering.
+        data_type: varchar
+        tests:
+          - not_null
+
+      - name: deals_count
+        description: Number of distinct deals that reached the funnel step within the month.
+        data_type: bigint
+        tests:
+          - not_null

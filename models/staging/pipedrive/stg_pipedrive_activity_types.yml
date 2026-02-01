@@ -1,0 +1,32 @@
+version: 2
+
+models:
+  - name: stg_pipedrive_activity_types
+    description: Staging model for Pipedrive activity types. Contains metadata describing the different activity types that can be
+      associated with deals (e.g. meeting, call, custom activity types).
+
+    columns:
+      - name: activity_type_id
+        description: Unique identifier of the activity type in Pipedrive.
+        data_type: integer
+        tests:
+          - not_null
+          - unique
+
+      - name: activity_type_name
+        description: Human-readable name of the activity type.
+        data_type: varchar
+        tests:
+          - not_null
+
+      - name: is_active
+        description: Indicates whether the activity type is currently active.
+        data_type: boolean
+        tests:
+          - not_null
+
+      - name: activity_type
+        description: Technical activity type identifier used in activity records (e.g. meeting, call, custom type code).
+        data_type: varchar
+        tests:
+          - not_null

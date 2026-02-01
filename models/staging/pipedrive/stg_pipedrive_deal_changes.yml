@@ -1,0 +1,32 @@
+version: 2
+
+models:
+  - name: stg_pipedrive_deal_changes
+    description: Staging model for Pipedrive deal stage changes. Each row represents a stage change event for a deal, sourced from the deal_changes table.
+
+    columns:
+      - name: deal_id
+        description: Unique identifier of the deal.
+        data_type: integer
+        tests:
+          - not_null
+
+      - name: changed_field_key
+        description: Field that was changed in Pipedrive.
+        data_type: varchar
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['stage_id', 'add_time', 'user_id', 'lost_reason']
+      
+      - name: new_value
+        description: New value of the changed field. Represents the stage_id the deal moved into.
+        data_type: varchar
+        tests:
+          - not_null
+
+      - name: stage_entered_at
+        description: Timestamp when the stage occurred.
+        data_type: timestamp
+        tests:
+          - not_null
