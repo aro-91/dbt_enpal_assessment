@@ -1,0 +1,50 @@
+version: 2
+
+models:
+  - name: int_pipedrive_deal_stage_changes
+    description: Intermediate model representing Pipedrive deal stage transitions.
+      Each row corresponds to a deal entering a given stage at a specific time, with an
+      associated stage exit timestamp derived from the next stage entry (or open-ended for the last stage).
+      Grain is based on deal, stage, and entry in case of multiple entries.
+
+    columns:
+      - name: deal_stage_event_id
+        description: Surrogate identifier for a deal stage entry event, generated from deal_id, stage_id, and stage_entered_at.
+          Used to uniquely identify stage transition events.
+        data_type: varchar
+        tests:
+          - not_null
+          - unique
+
+      - name: deal_id
+        description: Unique identifier of the deal.
+        data_type: integer
+        tests:
+          - not_null
+
+      - name: stage_id
+        description: Identifier of the stage the deal moved into.
+        data_type: integer
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_pipedrive_stages')
+              field: stage_id
+
+      - name: stage_name
+        description: Human-readable name of the stage.
+        data_type: varchar
+        tests:
+          - not_null
+
+      - name: stage_entered_at
+        description: Timestamp when the deal entered the stage.
+        data_type: timestamp
+        tests:
+          - not_null
+
+      - name: stage_exited_at
+        description: Timestamp when the deal exited the stage (next stage entry time), or an open-ended timestamp for the last known stage.
+        data_type: timestamp
+        tests:
+          - not_null

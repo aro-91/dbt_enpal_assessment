@@ -1,0 +1,32 @@
+version: 2
+
+models:
+  - name: stg_pipedrive_stages
+    description: Staging model for Pipedrive stages. One row per stage, sourced from the stages table.
+
+    columns:
+      - name: stage_id
+        description: Unique identifier of the stage.
+        data_type: integer
+        tests:
+          - not_null
+          - unique
+          - accepted_values:
+              values: [1,2,3,4,5,6,7,8,9]
+
+      - name: stage_name
+        description: Human-readable name of the stage.
+        data_type: varchar
+        tests:
+          - not_null
+          - accepted_values:
+              values:
+                - "Lead Generation"
+                - "Qualified lead"
+                - "Needs Assessment"
+                - "Proposal/Quote Preparation"
+                - "Negotiation"
+                - "Closing"
+                - "Implementation/Onboarding"
+                - "Follow-up/Customer Success"
+                - "Renewal/Expansion"

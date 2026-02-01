@@ -1,0 +1,43 @@
+version: 2
+
+models:
+  - name: int_pipedrive_deal_activity_changes
+    description: Intermediate model deriving activity events for deals within stage windows.
+      Produces one row per deal per activity event (e.g., completed meeting during 'Qualified lead',
+      completed sc_2 during 'Needs Assessment'), intended for downstream funnel reporting.
+      Grain is based on deal, stage, and activity.
+
+    columns:
+      - name: deal_stage_activity_event_id
+        description: Surrogate identifier for a deal activity event. Generated from deal_id, stage_name, and task_type.
+          Ensures a single activity per deal per stage and activity type.
+        data_type: varchar
+        tests:
+          - not_null
+          - unique
+    
+      - name: deal_id
+        description: Unique identifier of the deal associated with the activity.
+        data_type: integer
+        tests:
+          - not_null
+
+      - name: stage_name
+        description: Name of the stage window during which the activity occurred.
+        data_type: varchar
+        tests:
+          - not_null
+
+      - name: activity_type_name
+        description: Activity type name.
+        data_type: varchar
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['Sales Call 1', 'Sales Call 1']
+
+      - name: first_activity_executed_at
+        description: Timestamp when the activity occurred (first occurrence within the stage window).
+        data_type: timestamp
+        tests:
+          - not_null
