@@ -1,0 +1,130 @@
+version: 2
+
+models:
+  - name: int_deal_monthly_snapshot
+    description: >
+      Point-in-time snapshot of every deal's status at the end of each calendar month.
+      This is the core intermediate model — all reporting models build on it.
+
+      GRAIN: deal_id × reporting_month (one row per deal per month, unique).
+
+      HOW IT WORKS — POINT-IN-TIME RESOLUTION:
+        The source (deal_changes) is an event log, not a state table. To get
+        the "current status as of end of month", we:
+          1. Build a monthly date spine using generate_series (all months in data range)
+          2. Cross-join each deal with every month from its creation month onward
+          3. For each deal × month pair, find the most recent stage_id event with
+             changed_at <= last second of that month (DISTINCT ON, ordered desc)
+          4. Repeat step 3 for user_id
+          5. Join lost_reason events that fall within that exact month
+
+        This is equivalent to "what would a snapshot table have recorded if we
+        had taken a photo of the database at midnight on the last day of each month."
+
+      MATERIALIZATION CHOICE — TABLE (not view):
+        This model is referenced by 4 downstream models and performs a large
+        cross-join (deals × months). Materializing as a table avoids re-running
+        the expensive join multiple times per dbt run. On larger datasets, consider
+        partitioning on reporting_month.
+
+      IS_CHURNED vs IS_LOST_THIS_MONTH:
+        - is_lost_this_month: true ONLY in the specific month the deal was lost.
+          Used for cohort-style analyses ("how many deals did we lose in March?")
+        - is_churned: true from the loss month onward, carries forward forever.
+          Used for pipeline health ("how many of our active deals are actually gone?")
+          Both flags are needed; collapsing them into one would break either use case.
+
+      DEALS WITH NO STAGE:
+        Some deals have an add_time event but zero stage_id events. These deals
+        appear in the snapshot with stage_id = null. This is valid — it means
+        the deal was created but never moved into the funnel. They are excluded
+        from funnel counts in rep_sales_funnel_monthly (where stage_id is not null).
+
+      OWNER RESOLUTION:
+        If a deal has no user_id events, user_id will be null for all months.
+        This can happen if deals were bulk-imported without owner assignment.
+
+    columns:
+      - name: deal_id
+        tests: [not_null]
+      - name: reporting_month
+        description: First day of the calendar month (date type).
+        tests: [not_null]
+      - name: stage_id
+        description: >
+          Most recent stage_id as of the last second of reporting_month.
+          Null if no stage has been assigned to the deal yet this month.
+      - name: current_stage_name
+        description: Human-readable name from stg_stages. Null if stage_id is null.
+      - name: user_id
+        description: Most recent owner user_id as of end of reporting_month.
+      - name: owner_name
+        description: Human-readable name from stg_users.
+      - name: is_churned
+        description: >
+          True from the reporting_month the deal was lost, and every month
+          after. False for all months before loss. Null-safe — always returns
+          a boolean, never null.
+      - name: is_lost_this_month
+        description: True only in the single reporting_month when loss occurred.
+      - name: lost_reason_id
+        description: >
+          Populated only in is_lost_this_month = true rows.
+          Null in all other months (including post-loss months).
+      - name: lost_reason_name
+        description: Decoded string label for lost_reason_id.
+      - name: lost_at
+        description: Exact timestamp of the lost_reason event. Null if not lost this month.
+
+  - name: int_deal_summary
+    description: >
+      One row per deal with full lifecycle summary. Single-grain deal-level table
+      used by rep_stage_funnel_analysis and rep_salesperson_performance to avoid
+      re-aggregating from the snapshot.
+
+      GRAIN: deal_id (unique).
+
+      FINAL STAGE DEFINITION:
+        final_stage_id is the LAST stage_id event recorded for the deal,
+        regardless of when it was recorded. For lost deals, this represents
+        the stage the deal was in when it was closed as lost.
+
+        Important: because deals can skip stages, final_stage_id does NOT
+        imply the deal passed through all prior stages. A deal lost at stage 6
+        may have skipped stages 3, 4, and 5 entirely.
+
+      DAYS_IN_PIPELINE DEFINITION:
+        For lost deals: lost_at::date - deal_created_at::date
+        For active deals: max(changed_at in full dataset)::date - deal_created_at::date
+
+        The active deal proxy uses the data horizon (latest event in the dataset)
+        rather than today's date, to make the metric reproducible. Using current_date
+        would cause the value to drift on every dbt run.
+
+      STAGES_TOUCHED:
+        Count of distinct stage IDs the deal was assigned to. A deal that went
+        1→2→3→3→3→4 has stages_touched = 4. Useful for identifying deals that
+        stalled vs. those that progressed rapidly.
+
+    columns:
+      - name: deal_id
+        tests: [not_null, unique]
+      - name: deal_created_at
+        description: Timestamp of the add_time event. Anchor for all time calculations.
+      - name: final_stage_id
+        description: >
+          Last stage recorded for this deal. For lost deals, the stage they
+          were in at time of loss. Not necessarily the highest stage reached.
+      - name: is_lost
+        description: >
+          True if a lost_reason event exists. False for deals still active
+          as of the data horizon. This is a boolean — never null.
+      - name: owner_user_id
+        description: User ID of the last assigned owner.
+      - name: days_in_pipeline
+        description: >
+          Pipeline duration in calendar days.
+          Lost deals: creation to loss.
+          Active deals: creation to data horizon (reproducible, not today).
+      - name: stages_touched
+        description: Count of distinct stage IDs the deal visited.

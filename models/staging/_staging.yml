@@ -1,0 +1,155 @@
+version: 2
+
+models:
+  - name: stg_deal_changes
+    description: >
+      Cleaned, typed event log of all field changes on Pipedrive deals.
+      This is the central source table — virtually all other models derive from it.
+
+      SOURCE STRUCTURE (EAV pattern):
+        The raw table uses an Entity-Attribute-Value design: one row per
+        (deal, timestamp, field). This means a single deal's full history
+        is spread across multiple rows grouped by deal_id, not columns.
+
+      KNOWN field_key VALUES:
+        - add_time:    Deal creation event. new_value is the ISO timestamp.
+                       Used as the deal's anchor date throughout the pipeline.
+        - user_id:     Owner reassignment. new_value is the Pipedrive user ID.
+                       A deal may have multiple user_id events over its life.
+        - stage_id:    Stage transition. new_value is the stage ID (1–9).
+                       Deals do NOT always move sequentially — skipping stages
+                       is common (e.g., 1 → 4 → 6) and is valid business behaviour.
+        - lost_reason: Deal marked as lost. new_value is the reason code (1–5).
+                       This is always the final event in a deal's history.
+                       A deal with a lost_reason event is considered churned.
+
+      ASSUMPTIONS:
+        - Every deal has exactly one add_time event.
+        - A deal may have zero stage_id events (added but never assigned a stage).
+        - A deal may change owners multiple times; only the last owner is used
+          as the "responsible" salesperson in reporting.
+        - Lost reason codes are stable. If Pipedrive adds new codes, the
+          assert_lost_reason_values_known test will catch it.
+    columns:
+      - name: deal_id
+        description: Numeric identifier of the deal in Pipedrive CRM.
+        tests:
+          - not_null
+      - name: changed_at
+        description: >
+          Timestamp when this field was changed. Used for all time-series logic.
+          Timezone: assumed UTC (no offset present in raw data).
+        tests:
+          - not_null
+      - name: field_key
+        description: >
+          Name of the field that changed. See model description for known values.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['add_time', 'user_id', 'stage_id', 'lost_reason']
+      - name: new_value
+        description: >
+          The new value of the field as a string. Downstream models cast this
+          to the appropriate type (int for stage_id and user_id, etc.).
+
+  - name: stg_stages
+    description: >
+      Reference table mapping numeric stage IDs to human-readable names.
+      Defines the 9-step Pipedrive sales funnel used by Enpal.
+
+      STAGE ORDER AND MEANING:
+        1  Lead Generation          — Deal created and assigned
+        2  Qualified Lead           — Lead validated as a real opportunity
+        3  Needs Assessment         — Customer requirements documented
+        4  Proposal/Quote Prep      — Commercial offer being built
+        5  Negotiation              — Offer presented, terms under discussion
+        6  Closing                  — Customer commitment obtained
+        7  Implementation/Onboarding — Product being deployed
+        8  Follow-up/Customer Success — Post-sale relationship management
+        9  Renewal/Expansion        — Contract renewed or upsold
+
+      NOTE: Not every deal passes through every stage. Stage skipping is
+      normal (e.g., a warm referral may enter at stage 3 or 4).
+    columns:
+      - name: stage_id
+        tests: [not_null, unique]
+      - name: stage_name
+        tests: [not_null]
+
+  - name: stg_users
+    description: >
+      Pipedrive user accounts, representing salespeople and their managers.
+      Used to attribute deal ownership and performance metrics.
+
+      OWNERSHIP MODEL:
+        A deal's owner (user_id) can change over time via reassignment events
+        in deal_changes. Reporting models use the LAST known owner as the
+        responsible party for a deal at any given point in time.
+    columns:
+      - name: user_id
+        tests: [not_null, unique]
+      - name: user_name
+        tests: [not_null]
+      - name: user_email
+        description: Used as a secondary identifier if user_id is ambiguous.
+
+  - name: stg_activity
+    description: >
+      Activities (calls, emails, meetings, tasks) logged against deals in Pipedrive.
+
+      IMPORTANT LIMITATION — LOW OVERLAP WITH DEAL_CHANGES:
+        The activity table has minimal referential overlap with deal_changes.
+        Most deals in deal_changes have few or no corresponding activity records.
+        This is likely because:
+          a) Activities were not consistently logged in Pipedrive, OR
+          b) The activity data export covers a different time window than deal_changes.
+
+        CONSEQUENCE FOR STEPS 2.1 AND 3.1:
+          The sales funnel requires "Sales Call 1" (step 2.1) and "Sales Call 2"
+          (step 3.1). These are not present in deal_changes and must be inferred
+          from completed activities while a deal is in stage 2 or 3 respectively.
+          Due to low overlap, these counts will be materially lower than the
+          underlying stage counts — this is a data quality finding, not a
+          modelling error. See rep_sales_funnel_monthly for the implementation.
+
+      RECOMMENDATION:
+        Validate with the Pipedrive admin whether activity logging was mandatory
+        during the data period. Consider adding a data quality metric for
+        "deals in stage 2/3 with zero logged activities."
+    columns:
+      - name: activity_id
+        tests: [not_null, unique]
+      - name: deal_id
+        tests: [not_null]
+      - name: done
+        description: >
+          Boolean. True if the activity was completed. Only completed activities
+          are counted for funnel steps 2.1 and 3.1.
+
+  - name: stg_activity_types
+    description: >
+      Reference table defining the types of activities that can be logged.
+      Examples: call, email, meeting, task.
+    columns:
+      - name: activity_type_id
+        tests: [not_null, unique]
+
+  - name: stg_fields
+    description: >
+      Unpacked version of the fields source table. One row per (field_key, option_id, option_label).
+      Used as the single source of truth for enum label resolution across the project —
+      replaces hardcoded CASE statements in intermediate and reporting models.
+      If Pipedrive adds or renames a lost_reason or stage, it is reflected automatically
+      on the next dbt run without any model changes.
+    columns:
+      - name: field_key
+        description: Matches field_key in deal_changes (e.g. stage_id, lost_reason).
+        tests: [not_null]
+      - name: option_id
+        description: Numeric ID of the enum option.
+        tests: [not_null]
+      - name: option_label
+        description: Human-readable label for the option.
+        tests: [not_null]

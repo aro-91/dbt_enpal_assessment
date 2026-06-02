@@ -1,0 +1,214 @@
+version: 2
+
+models:
+  - name: rep_deal_status_monthly
+    description: >
+      PRIMARY DELIVERABLE: Pivot of deal lifecycle history.
+      One row per deal × calendar month showing the deal's status at
+      the end of that month.
+
+      GRAIN: deal_id + reporting_month (enforced by test).
+
+      INTENDED USE:
+        - Cohort analysis: track a group of deals created in month X and
+          see how they progressed or churned over subsequent months
+        - Pipeline health: filter is_churned = false to see the live pipeline
+          as it looked at any historical month-end
+        - Owner tracking: see which user was responsible for a deal in each month,
+          useful when deals are reassigned mid-flight
+
+      WHY THIS IS LONG FORMAT (not wide/pivoted):
+        A true wide pivot would require one column per month, making the schema
+        change every month. Long format is composable, BI-tool friendly, and
+        compatible with window functions and time-series charting without reshape.
+
+      HOW TO READ IT:
+        For a deal that was created in April, progressed through stages May–July,
+        and was lost in August — you'll see 5 rows, one per month (Apr–Aug).
+        The August row will have is_lost_this_month = true and lost_reason_name
+        populated. September onward: the deal does not appear (it was lost in Aug).
+        Wait — actually the deal continues to appear in post-loss months with
+        is_churned = true so you can accurately measure "deals in our historical
+        pipeline including lost." Filter is_churned = false for active-only views.
+
+    columns:
+      - name: deal_id
+        tests: [not_null]
+      - name: reporting_month
+        description: First day of the calendar month (date).
+        tests: [not_null]
+      - name: user_id
+        description: Owner as of month end. Null if no owner was ever assigned.
+      - name: stage_id
+        description: Stage as of month end. Null if deal had no stage yet.
+      - name: is_churned
+        description: >
+          True from the month of loss onward. Use this to exclude churned deals
+          from active pipeline views.
+      - name: is_lost_this_month
+        description: True only in the month the deal was marked lost.
+      - name: lost_reason_name
+        description: Human-readable lost reason. Only populated when is_lost_this_month = true.
+
+  - name: rep_sales_funnel_monthly
+    description: >
+      REQUIRED BY ASSESSMENT: Monthly funnel counts per stage.
+      Columns: month, kpi_name, funnel_step, deals_count.
+
+      GRAIN: month × funnel_step.
+
+      DEFINITION OF deals_count:
+        Distinct active (is_churned = false) deals whose current stage at
+        month-end equals the funnel step stage. Deals with null stage are excluded.
+
+      STEPS 2.1 AND 3.1 — ACTIVITY-DERIVED (READ CAREFULLY):
+        The assessment defines "Sales Call 1" (step 2.1) and "Sales Call 2" (step 3.1).
+        These events are NOT in deal_changes. They are inferred from the activity table:
+          - Step 2.1: deals with a completed activity while their stage was 2 (Qualified Lead)
+          - Step 3.1: deals with a completed activity while their stage was 3 (Needs Assessment)
+
+        KNOWN LIMITATION — ACTIVITY TABLE COVERAGE:
+          The activity and deal_changes tables have low overlap (see stg_activity docs).
+          As a result, counts for steps 2.1 and 3.1 are likely understated relative
+          to the true number of sales calls that occurred.
+          This is a data completeness issue at source, not a modelling error.
+          Recommendation: flag this to stakeholders and confirm activity logging policy.
+
+      INTERPRETING THE FUNNEL:
+        This is a STOCK metric (how many deals are at each stage at month end),
+        not a FLOW metric (how many passed through). For flow-based funnel analysis
+        (conversion rates between stages), use rep_stage_funnel_analysis.
+
+    columns:
+      - name: month
+        tests: [not_null]
+      - name: kpi_name
+        tests: [not_null]
+      - name: funnel_step
+        tests: [not_null]
+      - name: deals_count
+        tests: [not_null]
+
+  - name: rep_stage_funnel_analysis
+    description: >
+      ADDITIONAL KPI MODEL: Stage-level drop-off analysis with lost reason trends.
+      Answers: "Where in the funnel are we losing the most customers, and why?"
+
+      GRAIN: lost_month × final_stage_id × lost_reason_id.
+
+      KEY METRICS EXPLAINED:
+        deals_lost:
+          Count of deals whose final stage was this stage and were lost this month.
+          "Final stage" = the last stage_id event before the lost_reason event.
+
+        avg_days_to_loss:
+          Average pipeline age (days from creation) for deals lost here.
+          Longer durations at early stages indicate stalling.
+          Shorter durations at early stages may indicate quick disqualifications.
+
+        pct_of_monthly_losses:
+          This stage+reason combination's share of ALL deals lost that month.
+          Use this to spot if one stage suddenly dominates losses in a given month.
+
+        cumulative_deals_lost:
+          Running total per stage × reason over time. Use for trend line charts
+          to see if a particular drop-off point is worsening or improving.
+
+      HOW TO USE:
+        To find the single worst drop-off stage overall:
+          SELECT final_stage_name, SUM(deals_lost) GROUP BY 1 ORDER BY 2 DESC
+
+        To find emerging trends (a reason growing month-over-month):
+          Chart cumulative_deals_lost per lost_reason_name, filtered to one stage.
+
+      ASSUMPTIONS:
+        - A deal's "final stage" is its last recorded stage_id, which is the stage
+          it was in when marked lost. This is the most actionable definition —
+          it tells us where in the process the relationship broke down.
+        - Deals lost with no stage (never entered funnel) are excluded here but
+          will appear in assert_lost_deals_have_final_stage test results.
+
+    columns:
+      - name: lost_month
+        tests: [not_null]
+      - name: final_stage_id
+        description: Stage where the deal was when lost. This is where churn occurred.
+      - name: deals_lost
+        description: Count of deals lost at this stage × reason × month.
+      - name: pct_of_monthly_losses
+        description: Share (0–100) of that month's total losses from this row.
+      - name: cumulative_deals_lost
+        description: Running total per stage+reason, ordered by month. Good for trend charts.
+      - name: avg_days_to_loss
+        description: Average pipeline age in days for deals in this segment.
+
+  - name: rep_salesperson_performance
+    description: >
+      ADDITIONAL KPI MODEL: Monthly performance scorecard per salesperson.
+      Enables comparison of reps by pipeline size, win/loss rates, deal velocity,
+      and characteristic failure patterns.
+
+      GRAIN: user_id × reporting_month.
+
+      METRIC DEFINITIONS:
+
+        deals_in_pipeline:
+          Active (non-churned) deals owned by this rep at month end.
+          A deal is "owned" by whoever was the most recent owner as of that month.
+
+        deals_lost:
+          Deals where this rep was the owner at the time of loss (is_lost_this_month).
+          A rep who inherited a deal that was already going badly is still credited
+          with the loss — adjust this in a future iteration if handoff tracking exists.
+
+        deals_reached_closing:
+          Deals that received a stage_id = 6 (Closing) event this month while
+          owned by this rep. This is a leading indicator of wins — not all
+          closing-stage deals convert.
+
+        deals_won:
+          Deals that reached stage_id = 9 (Renewal/Expansion) this month.
+          Stage 9 is used as the "won" proxy since there is no explicit "won" flag
+          in the deal_changes data.
+
+        conversion_rate_pct:
+          deals_won / (deals_won + deals_lost) × 100 for this month.
+          Null when no concluded deals exist (avoids division by zero).
+          NOTE: This is conclusion-based, not pipeline-based. A rep with a
+          large active pipeline but no conclusions this month will show null,
+          not zero. This is intentional and more accurate.
+
+        avg_days_to_loss:
+          Average pipeline age of deals this rep LOST this month.
+          A consistently high value may indicate reps who hold onto doomed deals
+          too long rather than disqualifying early.
+
+        most_common_lost_stage / most_common_lost_reason:
+          All-time values (not month-specific) showing where each rep characteristically
+          struggles. Useful for coaching conversations:
+          "Your deals most often stall at Negotiation due to Pricing Issues."
+
+      LIMITATION — OWNERSHIP ATTRIBUTION:
+        Performance is attributed to the LAST owner. If a deal was owned by Rep A
+        for 90% of its life and then transferred to Rep B one week before being lost,
+        Rep B gets the loss. This is a known limitation and could be refined by
+        attributing by ownership duration (hours_owned / total_pipeline_hours).
+
+    columns:
+      - name: user_id
+        tests: [not_null]
+      - name: reporting_month
+        tests: [not_null]
+      - name: conversion_rate_pct
+        description: >
+          Won / (won + lost) × 100. Null when no concluded deals in the month.
+          Range: 0–100.
+      - name: avg_days_to_loss
+        description: Average days in pipeline for deals lost this month by this rep.
+      - name: most_common_lost_stage
+        description: >
+          All-time most frequent stage at which this rep's deals are lost.
+          Computed over the full dataset, not just the reporting month.
+      - name: most_common_lost_reason
+        description: >
+          All-time most frequent lost reason across this rep's deals.

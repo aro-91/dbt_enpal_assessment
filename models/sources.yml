@@ -1,8 +1,89 @@
 version: 2
 
 sources:
-  - name: postgres_public
-    database: postgres
+  - name: pipedrive
+    description: >
+      Raw Pipedrive CRM data loaded into Postgres via Docker init.sql.
+      Contains deal lifecycle events, stage definitions, user/owner data,
+      and activity logs.
     schema: public
     tables:
+      - name: deal_changes
+        description: >
+          EAV-style event log of all field changes on deals.
+          Each row captures one field change (stage_id, user_id, lost_reason, add_time).
+        columns:
+          - name: deal_id
+            description: Unique identifier of the deal.
+          - name: change_time
+            description: Timestamp when the field was changed.
+          - name: changed_field_key
+            description: "The field that changed. Known values: add_time, user_id, stage_id, lost_reason."
+          - name: new_value
+            description: The new value after the change.
+
+      - name: stages
+        description: Lookup table mapping stage IDs to stage names in the sales funnel.
+        columns:
+          - name: stage_id
+            description: Primary key.
+          - name: stage_name
+            description: Human-readable stage name.
+
+      - name: users
+        description: Salespeople and other Pipedrive users.
+        columns:
+          - name: id
+            description: Primary key.
+          - name: name
+            description: Full name.
+          - name: email
+            description: Email address.
+          - name: modified
+            description: Last modified timestamp.
+
       - name: activity
+        description: Activities (calls, emails, tasks) linked to deals and users.
+        columns:
+          - name: activity_id
+            description: Primary key.
+          - name: type
+            description: Activity type string.
+          - name: assigned_to_user
+            description: User ID the activity is assigned to.
+          - name: deal_id
+            description: Deal the activity is linked to.
+          - name: done
+            description: Whether the activity has been completed.
+          - name: due_to
+            description: Scheduled due datetime.
+
+      - name: activity_types
+        description: Lookup table for activity type names and metadata.
+        columns:
+          - name: id
+            description: Primary key.
+          - name: name
+            description: Type name.
+          - name: active
+            description: Whether this type is active.
+          - name: type
+            description: Internal type identifier.
+
+      - name: fields
+        description: >
+          Pipedrive field metadata. Each row defines a trackable field in deal_changes.
+          The field_value_options column is a JSONB array of {id, label} objects
+          defining the valid options for enum fields (stage_id, lost_reason).
+          Used as the source of truth for label lookups — avoids hardcoding in models.
+        columns:
+          - name: id
+            description: Primary key.
+          - name: field_key
+            description: Matches changed_field_key in deal_changes (e.g. stage_id, lost_reason).
+          - name: name
+            description: Human-readable field name.
+          - name: field_value_options
+            description: >
+              JSONB array of valid enum options. Format: [{"id": "1", "label": "..."}, ...]
+              Null for free-text fields (add_time, user_id).

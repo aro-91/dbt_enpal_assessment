@@ -1,0 +1,18 @@
+# dbt / local development artifacts
+target/
+logs/
+dbt_packages/
+
+# Python virtual environment
+.venv/
+
+# Local Python version manager
+.python-version
+
+# macOS
+.DS_Store
+
+# Local notes and scratch files — never commit
+PRESENTATION_GUIDE.md
+NOTES.md
+scratch/
