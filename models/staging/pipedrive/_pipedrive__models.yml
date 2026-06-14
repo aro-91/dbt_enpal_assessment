@@ -1,0 +1,85 @@
+version: 2
+
+models:
+  - name: stg_pipedrive__activity
+    description: One row per Pipedrive activity (calls, meetings, etc.), renamed and lightly typed.
+    columns:
+      - name: activity_id
+        description: >
+          Activity identifier. Not unique in the source data (11 duplicate ids across
+          4,579 rows) - do not rely on this column as a unique key.
+        data_tests:
+          - not_null
+      - name: deal_id
+        description: Deal the activity relates to.
+        data_tests:
+          - not_null
+      - name: assigned_to_user_id
+        description: User id the activity is assigned to.
+      - name: activity_type_code
+        description: Activity type code, joins to stg_pipedrive__activity_types.activity_type_code.
+        data_tests:
+          - not_null
+          - accepted_values:
+              values: ['meeting', 'sc_2', 'follow_up', 'after_close_call']
+      - name: is_done
+        description: Whether the activity has been completed/marked as done.
+        data_tests:
+          - not_null
+      - name: due_at
+        description: Scheduled/due timestamp for the activity.
+
+  - name: stg_pipedrive__activity_types
+    description: Lookup of activity type codes to human-readable names.
+    columns:
+      - name: activity_type_id
+        description: Primary key.
+        data_tests:
+          - unique
+          - not_null
+      - name: activity_type_code
+        description: Activity type code, matches stg_pipedrive__activity.activity_type_code.
+        data_tests:
+          - unique
+          - not_null
+      - name: activity_type_name
+        description: Human-readable activity type name.
+        data_tests:
+          - not_null
+      - name: is_active
+        description: Whether the activity type is active.
+
+  - name: stg_pipedrive__deal_changes
+    description: >
+      One row per field-change event on a deal. This is the only source of deal
+      history - there is no `deals` table in the raw data.
+    columns:
+      - name: deal_id
+        description: Deal identifier.
+        data_tests:
+          - not_null
+      - name: changed_field_key
+        description: Which deal field this change record applies to.
+        data_tests:
+          - not_null
+          - accepted_values:
+              values: ['stage_id', 'user_id', 'add_time', 'lost_reason']
+      - name: new_value
+        description: New value of the field after the change, stored as text.
+      - name: changed_at
+        description: Timestamp the field changed.
+        data_tests:
+          - not_null
+
+  - name: stg_pipedrive__stages
+    description: Pipedrive pipeline stages, 1:1 with sales funnel steps 1-9.
+    columns:
+      - name: stage_id
+        description: Stage identifier (1-9), corresponds to funnel step number.
+        data_tests:
+          - unique
+          - not_null
+      - name: stage_name
+        description: Human-readable stage name.
+        data_tests:
+          - not_null

@@ -1,0 +1,7 @@
+target/
+dbt_packages/
+logs/
+
+# Personal working notes, not part of the submission
+PROJECT_LOG.md
+INTERVIEW_PREP.md
