@@ -1,3 +1,42 @@
+# Enpal Analytics Engineer Take-Home: Sales Funnel
+
+## Solution
+
+This repo builds `rep_sales_funnel_monthly`, a monthly Pipedrive sales-funnel report
+(`month`, `kpi_name`, `funnel_step`, `deals_count`) covering funnel steps 1-9 plus
+sub-steps 2.1 (Sales Call 1) and 3.1 (Sales Call 2).
+
+**Run it:**
+```bash
+docker compose up -d                              # start Postgres + load raw CSVs
+source ~/.virtualenvs/dbt_env/bin/activate        # activate the dbt virtualenv
+DBT_PROFILES_DIR=. dbt deps                         # install dbt_utils
+DBT_PROFILES_DIR=. dbt build                       # build all models + run tests
+```
+Results land in the `public_pipedrive_analytics` schema (final model:
+`rep_sales_funnel_monthly`). Browse the model docs/lineage with
+`DBT_PROFILES_DIR=. dbt docs generate && DBT_PROFILES_DIR=. dbt docs serve`.
+
+**Model layout** (`sources → staging → intermediate → marts`):
+```
+models/staging/pipedrive/     stg_pipedrive__{activity, activity_types, deal_changes, stages}
+models/intermediate/          int_deal_stage_history, int_deal_sales_call
+models/marts/reporting/       rep_sales_funnel_monthly   ← deliverable
+analyses/                     exploration queries backing each data-quality finding
+```
+Uses `dbt_utils` (`generate_surrogate_key`, `unique_combination_of_columns`); run
+`DBT_PROFILES_DIR=. dbt deps` before the first build.
+
+**Key modeling decision:** stage steps use Pipedrive's own funnel convention, a deal
+that reaches a stage counts as having entered every earlier stage (skipped stages
+back-filled), since 84% of deals skip a stage. Sales Call steps count completed
+(`done = true`) activities only.
+
+**Docs:** [`NOTES.md`](NOTES.md) is the written walkthrough (approach, source-data
+exploration, design decisions, results, and insights).
+
+---
+
 ## Setup
 
 1. Download Docker Desktop (if you don’t have installed) using the official website, install and launch.
