@@ -1,13 +1,12 @@
 /*
-    Exploratory query: confirms that a deal's stage_id history is not
-    monotonic - deals can skip stages (e.g. 5 -> 8) or revisit earlier ones
-    (e.g. 8 -> 1). 2,510 of the 8,906 stage_id changes are such "non-step"
-    transitions.
+    Shows that deals don't move through the stages in order: they jump forward
+    (e.g. 5 to 8) or drop back (e.g. 8 to 1). 2,510 of the 8,906 stage changes
+    are jumps like that (not a simple step up by one).
 
-    This is why int_deal_stage_history uses "first time reached"
-    (min(changed_at) per deal_id + stage_id) rather than "latest stage" or
-    "every transition" - it's robust to this skip/revisit behavior and gives
-    a clean monthly milestone view.
+    This is why int_deal_stage_history counts a deal into a stage at the first
+    time it reached that stage or later, instead of using its latest stage or
+    counting every move. That approach copes with the jumps and gives a clean
+    month-by-month view.
 */
 with stage_changes as (
     select

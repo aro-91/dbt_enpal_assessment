@@ -7,14 +7,13 @@ with stg_pipedrive__activity as (
 )
 
 /*
-    Steps 2.1 (Sales Call 1) and 3.1 (Sales Call 2) only count completed
-    activities (is_done is true), not scheduled/pending ones. The 2.1/3.1
-    step numbers and the activity_type_code -> kpi_name mapping below are
-    fixed by the assessment brief's funnel definition, hence the hard-coded
-    case statement rather than a join to a reference table.
+    Steps 2.1 (Sales Call 1) and 3.1 (Sales Call 2) only count activities that
+    are done (is_done is true), not ones that are just booked. The step numbers
+    2.1/3.1 come straight from the brief, so they're written out in a case
+    statement rather than looked up from a table.
 
-    No deal has more than one completed activity of the same type, so
-    (deal_id, funnel_step) is a safe grain for the surrogate key below.
+    No deal has more than one finished activity of the same type, so
+    (deal_id, activity_type_code) is unique and safe to build the key from.
 */
 , completed_sales_calls as (
     select

@@ -1,8 +1,8 @@
 # Enpal Analytics Engineer Take-Home: Project Walkthrough
 
-This document records the approach and reasoning behind the project: what was explored,
-how it was modeled, why each decision was made, and what the output shows. The runnable
-exploration queries behind the findings live in `analyses/`.
+This walks through how I built the project: what I looked at in the data, how I modeled
+it, why I made each call, and what the numbers show. The queries behind the findings are
+in `analyses/`.
 
 ## 1. Objective
 
@@ -19,154 +19,184 @@ Output columns: `month`, `kpi_name`, `funnel_step`, `deals_count`.
 The brief also asks for a deep understanding of the Pipedrive source data, dbt `sources`,
 and a layered model "for optimal relevance and maintainability."
 
-## 2. How This Maps to the Assessment Criteria
+## 2. Source Data: What's Actually There
 
-| Criterion | Where it's demonstrated |
-|---|---|
-| **Exploratory Analysis** | Section 3 plus 5 runnable queries in `analyses/*.sql` (one per finding) |
-| **Data Modeling** | Section 4 (architecture) and Section 5 (design decisions): sources, staging, intermediate, marts, surrogate keys, 42 tests |
-| **SQL Code Efficiency** | Section 8: materialization strategy, single `union all` plus `group by`, pre-aggregation before joins |
-| **Project Organization & Clarity** | This doc, the README, per-layer `_*.yml` docs/tests, and this table |
+6 raw tables, loaded by `docker-compose` and `init.sql`:
 
-## 3. Source Data: What's Actually There
-
-6 raw tables, loaded via `docker-compose` and `init.sql`:
-
-| Table | Rows | Role |
+| Table | Rows | What it is |
 |---|---|---|
-| `activity` | 4,579 | Calls/meetings linked to deals (`done` flag, `due_to` date) |
-| `activity_types` | 4 | Lookup: `meeting` = "Sales Call 1", `sc_2` = "Sales Call 2", plus 2 others not in scope |
-| `deal_changes` | 15,406 | Change log, the only source of deal history |
-| `fields` | 4 | Field metadata / enum option labels |
-| `stages` | 9 | Pipeline stages, 1:1 with funnel steps 1 to 9 |
+| `activity` | 4,579 | Calls/meetings tied to deals (`done` flag, `due_to` date) |
+| `activity_types` | 4 | Lookup: `meeting` = "Sales Call 1", `sc_2` = "Sales Call 2", plus 2 others we don't need |
+| `deal_changes` | 15,406 | A change log, and the only record of deal history |
+| `fields` | 4 | Details about each field, plus the labels behind option codes |
+| `stages` | 9 | Pipeline stages, one for each funnel step 1 to 9 |
 | `users` | 1,787 | Sales reps / deal owners |
 
-**The key discovery:** there is no `deals` table. Everything about a deal (creation date,
-owner, pipeline stage, lost reason) is an event row in `deal_changes` (`deal_id`,
-`change_time`, `changed_field_key`, `new_value`). It is an EAV-style change log covering
-**1,995 distinct deals** (`analyses/exploration_deal_changes_field_breakdown.sql`).
+**The main thing to know:** there is no `deals` table. Everything about a deal (when it
+was created, its owner, its stage, its lost reason) is just a row in `deal_changes`, with
+one row per change (`deal_id`, `change_time`, `changed_field_key`, `new_value`). Across
+all of those changes there are **1,995 different deals**
+(`analyses/exploration_deal_changes_field_breakdown.sql`).
 
-Findings that shaped the model, each backed by a runnable query in `analyses/`:
+Findings that shaped the model, each with a query in `analyses/` to back it up:
 
-1. **`stage_id` history is not monotonic, and deals skip stages.** Deals can jump forward
-   (2 to 5) or revisit earlier stages (8 to 1). 2,510 of 8,906 `stage_id` changes are
-   such "non-step" transitions, and **84% of deals reach a stage without recording every
-   prior stage** (`analyses/exploration_stage_id_non_monotonic.sql`). This drives the
-   central modeling decision in Section 5a: how to count a funnel step when stages are
-   skipped.
-2. **`lost_reason` is populated for ~100% of deals** (5 reasons, ~380 to 425 each, evenly
-   distributed). That looks like synthetic fill rather than a genuine "deal lost" signal,
-   so it is treated as metadata only and does **not** filter deals out of the funnel. The
-   same query shows 5 deals with a duplicate `add_time`/`lost_reason` entry, unused by the
-   funnel model so harmless (`analyses/exploration_lost_reason_distribution.sql`).
-3. **`activity.done` is roughly 50/50 per activity type.** About half of `meeting`/`sc_2`
-   activities are scheduled but not completed
+1. **Deals don't move through the stages in order, and they skip stages.** A deal can jump
+   forward (2 to 5) or drop back (8 to 1). 2,510 of the 8,906 stage changes are jumps like
+   that, and **84% of deals reach a stage without a record of every stage before it**
+   (`analyses/exploration_stage_skipping.sql`). This drives the main decision in
+   Section 4a: how to count a step when stages get skipped.
+2. **`lost_reason` is filled in for nearly every deal** (5 reasons, roughly 380 to 425
+   deals each, spread evenly). That spread looks like filler data rather than a real "this
+   deal was lost" signal, so I treat it as just an attribute and do **not** use it to drop
+   deals from the funnel. The same query shows 5 deals with a second `add_time`/`lost_reason`
+   row, which the funnel model doesn't use, so it does no harm
+   (`analyses/exploration_lost_reason_distribution.sql`).
+3. **About half of all activities are not done yet.** For both `meeting` and `sc_2`, roughly
+   50% are scheduled but not completed
    (`analyses/exploration_activity_done_split.sql`).
-4. **`activity_id` is not unique:** 11 duplicate ids across 4,579 rows
-   (`analyses/exploration_activity_id_duplicates.sql`), so it is not used as a primary key
-   anywhere downstream (see Section 7).
+4. **`activity_id` is not unique:** 11 ids each appear twice, and the two rows under a
+   repeated id are different activities (different deal, time, often type), not copies
+   (`analyses/exploration_activity_id_duplicates.sql`). So I keep all the rows and just
+   don't use `activity_id` as a key (see Section 6).
+5. **`activity` and `deal_changes` are about almost completely different deals.** Of the
+   4,572 deals in `activity`, only **8** also show up in `deal_changes` (which holds 1,995
+   deals) (`analyses/exploration_activity_deal_changes_overlap.sql`). This is the biggest
+   thing to flag: the Sales Call steps (2.1/3.1, from `activity`) and the stage steps (1-9,
+   from `deal_changes`) are really two different sets of deals shown in one report. The
+   model still does what the brief asks, but you can't read a call count against a stage
+   count as if the same deals flowed between them (see Section 5). This is almost certainly
+   just how the sample data was built; in real Pipedrive, `activity.deal_id` would point
+   back to the deal.
+6. **The two tables cover different date ranges.** Stage changes run from 2024-01 to
+   2025-02, but activities stop at 2024-09-13
+   (`analyses/exploration_time_coverage.sql`), so months after September 2024 have stage
+   steps but no Sales Call rows. The stage values themselves are clean whole numbers 1 to 9
+   with nothing odd in them (`analyses/exploration_stage_value_validity.sql`).
+7. **The two tables the report doesn't use (`users` and `fields`) are fine.** `users` is
+   clean (1,787 rows, no repeated ids), and every `user_id` in `deal_changes` and every
+   `assigned_to_user` in `activity` points at a real user
+   (`analyses/exploration_user_references.sql`). So the broken `deal_id` link in finding 5
+   is specific to those two tables, not the data in general. `fields` just holds the labels
+   behind the codes (`analyses/exploration_fields_decodes.sql`): it spells out
+   `lost_reason` (1 = Customer Not Ready, and so on) and `stage_id` (matching the stages
+   table). All six raw tables have now been looked at; `activity_types` is a 4-row lookup
+   that's documented in the sources file and used directly by the Sales Call model.
 
-## 4. Architecture
+## 3. Architecture
 
 ```
 sources (raw Postgres tables)
    |
    v
-staging/pipedrive/            1:1 cleaned, renamed, typed views
+staging/pipedrive/            views: renamed and retyped, one row in for one row out
    stg_pipedrive__activity
    stg_pipedrive__activity_types
    stg_pipedrive__deal_changes
    stg_pipedrive__stages
    |
    v
-intermediate/                 business logic, still grain-preserving
-   int_deal_stage_history      one row per deal per stage entered (back-filled)
+intermediate/                 the real logic (one row per deal+stage / per completed call)
+   int_deal_stage_history      one row per deal per stage entered (gaps filled in)
    int_deal_sales_call         completed Sales Call 1/2 activities
    |
    v
 marts/reporting/
-   rep_sales_funnel_monthly    final aggregated report
+   rep_sales_funnel_monthly    the final report
 ```
 
-Each `int_` model exposes a surrogate key (`deal_stage_sk`, `deal_sales_call_sk`, built
-with `dbt_utils.generate_surrogate_key`) with `unique` and `not_null` tests, giving every
-intermediate model a tested primary key independent of the source `activity_id`
-(see Section 7).
+Each `int_` model has its own unique key (`deal_stage_sk`, `deal_sales_call_sk`), built
+with `dbt_utils.generate_surrogate_key` and checked with `unique` and `not_null` tests.
+That gives each model a reliable key without leaning on `activity_id`, which isn't unique
+(see Section 6).
 
-`users` and `fields` are documented in the sources YAML for full schema understanding but
-have no staging models. They are not needed for this report, so no models were built "just
-in case."
+`users` and `fields` are written up as sources so the whole schema is documented, but they
+don't have models. The report doesn't need them, so I didn't build models just in case.
 
-## 5. Key Design Decisions
+## 4. Key Design Decisions
 
-### a) Cumulative "entered stage" logic for Steps 1 to 9 (Pipedrive convention)
+### a) Counting a deal into every stage it reached (Steps 1 to 9, the Pipedrive way)
 
-This is the most important modeling decision. Because 84% of deals skip at least one
-stage, the count at each step depends entirely on how skipped stages are treated. Two
-defensible options:
+This is the most important call in the project. Because 84% of deals skip at least one
+stage, the count at each step depends entirely on what you do with the skipped ones. Two
+reasonable options:
 
-- **Explicit milestone:** count a deal at a stage only if it explicitly logged a change to
-  that stage. Faithful to the raw events, but it understates the funnel: a deal that jumps
-  2 to 5 is never counted at stages 3 and 4.
-- **Cumulative / back-filled (chosen):** a deal that reached stage N counts as having
-  entered every stage 1 to N. This matches **Pipedrive's own Insights deal progress
-  report**, which states: "The entered stage deal count also includes deals that have
-  skipped that stage while moving on to a future stage. For example, if a deal has moved
-  from stage two directly to stage five in the time frame selected, it will show as
-  having entered stages three, four and five"
+- **Only count what was logged:** count a deal at a stage only if it actually logged a move
+  to that stage. True to the raw data, but it undercounts: a deal that jumps from 2 to 5
+  never shows up at stages 3 and 4.
+- **Fill in the gaps (what I chose):** a deal that reached stage N counts at every stage 1
+  through N. This matches **Pipedrive's own deal progress report**, which says: "The
+  entered stage deal count also includes deals that have skipped that stage while moving on
+  to a future stage. For example, if a deal has moved from stage two directly to stage five
+  in the time frame selected, it will show as having entered stages three, four and five"
   ([Pipedrive: Insights reports - deal progress](https://support.pipedrive.com/en/article/insights-reports-deal-progress)).
 
-I chose cumulative back-fill so the report means the same thing Enpal's sales team sees
-natively in Pipedrive. The difference is large: Stage 5 is 894 deals under explicit
-counting versus **1,693** back-filled. A deal "enters" stage k at the moment it first
-reached stage k or later (`MIN(changed_at)` over events with `stage_id >= k`), so skipped
-stages are attributed to the month of the jump that carried the deal past them. The result
-is a properly monotonic funnel.
+I went with filling in the gaps so the report means the same thing the sales team already
+sees in Pipedrive. The difference is big: stage 5 is 894 deals if you only count what was
+logged, versus **1,693** once you fill the gaps. I count a deal as entering a stage at the
+first time it reached that stage or any later one (the earliest `change_time` among its
+events at that stage or beyond), so a skipped stage is dated to the jump that took the deal
+past it. The result is a funnel where each step is smaller than the one before, the way
+you'd expect.
 
-**Why we have to back-fill (the data does not already contain it).** Pipedrive's
-back-fill is a rule its *reporting engine* applies at query time; it is never written
-back into the raw event log we were given. When a rep moves a deal forward, Pipedrive
-records a single "now at stage N" event, not one event per intermediate stage.
-Concrete example, deal `680288`: the raw `deal_changes` export holds exactly two stage
-events (stage 1, then stage 9), yet Pipedrive's report counts it in all nine stages.
-Our model reproduces those nine rows from the two raw events. Reconstructing that
-reporting logic from the source event stream is the actual task; if the export already
-contained the back-filled rows there would be nothing to model.
+**Why we have to fill the gaps ourselves (the data doesn't already do it).** Pipedrive
+works this out when it draws the report; it never saves those extra rows back into the
+data. When a rep drags a deal forward, Pipedrive stores one "now at stage N" row, not one
+row for each stage in between. Take deal `680288`: the raw `deal_changes` data has exactly
+two stage rows (stage 1, then stage 9), yet Pipedrive's report shows it in all nine stages.
+Our model turns those two rows back into nine. Rebuilding that report logic from the raw
+events is the actual job; if the raw data already had the filled-in rows, there'd be
+nothing to build.
 
-### b) Steps 2.1 / 3.1 use `done = true` activities only
+### b) Sales Calls (Steps 2.1 / 3.1) count completed activities only
 
-About 50% of `meeting`/`sc_2` activities are `done = false` (scheduled but not completed).
-Rather than guess, I checked Pipedrive's own product conventions: their "marked as done"
-logic and Insights activity reports both filter on `done = true` for completed activity
-counts ([source](https://support.pipedrive.com/en/article/activity-marked-as-done-logic),
+About half of `meeting`/`sc_2` activities are not done (scheduled but not completed).
+Instead of guessing, I checked how Pipedrive itself handles this: its "marked as done"
+logic and its activity reports both count only `done = true` activities as completed
+([source](https://support.pipedrive.com/en/article/activity-marked-as-done-logic),
 [source](https://support.pipedrive.com/en/article/insights-reports-activities-performance)).
-This keeps the semantics consistent with (a): both represent the deal actually reaching a
-milestone, not something merely scheduled.
+That also lines up with (a): both are about the deal actually reaching a step, not just
+having something booked.
 
-### c) `funnel_step` as `numeric(3,1)`
+### c) `funnel_step` stored as `numeric(3,1)`
 
-Stores `1, 2, 2.1, 3, 3.1, 4 ... 9`, which sorts naturally in any BI tool without extra
-logic and directly encodes the brief's "Step 2.1 / 3.1" sub-step notation.
+It holds `1, 2, 2.1, 3, 3.1, 4 ... 9`, which sorts in the right order in any BI tool on its
+own, and matches the brief's "Step 2.1 / 3.1" numbering directly.
 
-### d) `kpi_name` uses source `stage_name` verbatim
+### d) `kpi_name` uses the stage name straight from the source
 
-For example "Qualified lead" (lowercase from the source `stages` table) rather than
-re-casing to "Qualified Lead". This preserves traceability back to the CRM's own labels.
-It is worth flagging as a quick discussion point: trivial to normalize if the BI team
-prefers consistent casing.
+For example "Qualified lead" (lowercase, exactly as it sits in the `stages` table) instead
+of re-spelling it as "Qualified Lead". That keeps the labels matching what's in the CRM.
+(The `fields` lookup actually stores the title-case version, "Qualified Lead", so the two
+sources disagree on capitalization; I went with the `stages` table.) Worth a quick mention
+in a walkthrough: easy to tidy the capitalization if the BI team wants it consistent.
 
-## 6. Result and Initial Insights
+### e) Every month shows every step (0 where nothing happened)
 
-`dbt build` produces 1 table, 6 views, and **42 passing tests**. Aggregated across all
-months (2024-01 to 2025-02), using the cumulative "entered stage" logic from Section 5a:
+A plain `group by` only gives you a row where something happened, so some months would be
+missing steps. To make the report easy to chart, I add a month spine
+(`dbt_utils.date_spine`) and fill the gaps with 0. The one catch is the difference between
+"zero happened" and "no data": the activity table stops in September 2024, so I fill the
+stage steps across the whole stage range but the Sales Call steps only across the months
+that actually have activity. That way you never see a made-up "0 calls" for a month where
+there simply isn't any call data.
 
-| Step | KPI | Deals entered | Conversion from prior step |
+## 5. Result and Initial Insights
+
+`dbt build` produces 1 table, 6 views, and **42 passing tests**. Totals across all months
+(2024-01 to 2025-02), using the gap-filling approach from Section 4a:
+
+The stage steps (1-9) and the Sales Call steps (2.1/3.1) sit in the same table but come
+from different sources and, per finding 5 in Section 2, almost completely different deals.
+So the conversion column only makes sense down the stage rows. The call rows show their own
+deal counts, not a conversion from the step above.
+
+| Step | KPI | Deals entered | Conversion (stage rows only) |
 |---|---|---:|---:|
 | 1 | Lead Generation | 1,995 | 100% of all deals |
 | 2 | Qualified lead | 1,990 | 99.7% |
-| 2.1 | Sales Call 1 | 568 | 28.5% of Qualified leads |
+| 2.1 | Sales Call 1 | 568 | n/a (different deals) |
 | 3 | Needs Assessment | 1,951 | 98.0% |
-| 3.1 | Sales Call 2 | 560 | 28.7% of Needs Assessment |
+| 3.1 | Sales Call 2 | 560 | n/a (different deals) |
 | 4 | Proposal/Quote Preparation | 1,862 | 95.4% |
 | 5 | Negotiation | 1,693 | 90.9% |
 | 6 | Closing | 1,424 | 84.1% |
@@ -174,66 +204,66 @@ months (2024-01 to 2025-02), using the cumulative "entered stage" logic from Sec
 | 8 | Follow-up/Customer Success | 723 | 66.9% |
 | 9 | Renewal/Expansion | 324 | 44.8% |
 
-**Observations:**
+**What stands out:**
 
-- Step 1 total (1,995) exactly matches the total distinct deal count, and the funnel is
-  properly monotonic. This confirms no deals are dropped and the back-fill is consistent.
-- The top of the funnel is very healthy (~95 to 99% progression through Proposal). The real
-  attrition is late-funnel: Closing to Onboarding (76%), Onboarding to Follow-up (67%), and
-  the steepest, Follow-up to Renewal/Expansion (45%). Retention and expansion, not
-  qualification, is where deals are lost.
-- Sales-call logging is strikingly low: only ~28% of deals at the relevant stage have a
-  completed Sales Call 1/2 logged, despite ~99% reaching Qualified/Needs Assessment. This
-  is a strong signal to take to the business: are calls under-logged in the CRM, or are
-  deals genuinely advancing without a recorded call?
+- The step 1 total (1,995) matches the total number of deals exactly, and each stage is
+  smaller than the last. That tells me no deals are dropped and the gap-filling holds
+  together.
+- The top of the funnel is healthy (about 95 to 99% carry through to Proposal). The real
+  drop-off is later on: Closing to Onboarding (76%), Onboarding to Follow-up (67%), and the
+  steepest, Follow-up to Renewal/Expansion (45%). Deals are lost in delivery and renewal,
+  not in qualifying.
+- The Sales Call counts (568 and 560) are not a conversion from the stages above them. They
+  come from different deals (finding 5). On their own, the `activity` data shows about half
+  of all logged Sales Calls are marked done. Whether the two tables should join at all is
+  the first question I'd raise with whoever owns the data.
 
-## 7. Data Quality and Testing
+## 6. Data Quality and Testing
 
 42 tests across all layers:
 
-- `not_null` and `unique` on natural keys (`stage_id`, `activity_type_code`, and others)
-  and on the surrogate keys (`deal_stage_sk`, `deal_sales_call_sk`) on the intermediate
+- `not_null` and `unique` on the real keys (`stage_id`, `activity_type_code`, and so on)
+  and on the generated keys (`deal_stage_sk`, `deal_sales_call_sk`) on the intermediate
   models.
-- `accepted_values` on enums (`changed_field_key`, `activity_type_code`, `kpi_name`,
-  `funnel_step`). These double as living documentation of the domain.
-- `dbt_utils.unique_combination_of_columns` on the report grain `(month, funnel_step)`,
-  which guarantees exactly one row per funnel step per month.
+- `accepted_values` on the fixed-value columns (`changed_field_key`, `activity_type_code`,
+  `kpi_name`, `funnel_step`). These also act as documentation of what values are allowed.
+- `dbt_utils.unique_combination_of_columns` on `(month, funnel_step)`, which guarantees one
+  row per funnel step per month.
 
-Surrogate keys use `dbt_utils.generate_surrogate_key` (cross-database, null-safe) rather
-than hand-rolled hashing.
+The generated keys use `dbt_utils.generate_surrogate_key` (it works across databases and
+handles nulls) instead of writing the hash by hand.
 
-**Known source data quality issue:** raw `activity.activity_id` has 11 duplicate ids across
-4,579 rows, so it is deliberately not given a `unique` test in `stg_pipedrive__activity`,
-just `not_null`, with the caveat documented in the column description.
-`int_deal_sales_call` instead derives its primary key from `(deal_id, activity_type_code)`,
-which is unique for completed Sales Call 1/2 activities.
+**One known data issue:** `activity.activity_id` repeats for 11 ids (each twice), and those
+pairs are different activities rather than duplicate rows, so I keep them all and test
+`activity_id` for `not_null` only, not `unique` (noted in the column description).
+`int_deal_sales_call` keys on `(deal_id, activity_type_code)` instead, which is unique for
+completed Sales Call 1/2 activities.
 
-## 8. SQL Efficiency Notes
+## 7. SQL Efficiency Notes
 
-- Staging and intermediate layers are views: no storage cost, always reflect the latest
-  source data, and the Postgres planner can collapse them into the final query.
-- Only the final mart is materialized as a table, since it is the one model downstream BI
-  tools query repeatedly.
-- `rep_sales_funnel_monthly` does a single `union all` of two pre-aggregated-grain CTEs
-  followed by one `group by`, which avoids repeated scans of `deal_changes` / `activity`
-  for each funnel step.
-- `int_deal_stage_history` aggregates `deal_changes` down to one row per `(deal, stage)`
-  before the join to `stages`, which keeps the join cheap (9-row dimension).
-- The models are warehouse-portable: `ref`, `source`, and `dbt_utils` keep them free of
-  Postgres-specific syntax beyond the `date_trunc`/cast idioms, so they would move to a
-  cloud warehouse such as Snowflake with minimal change.
+- Staging and intermediate are views: they cost no storage, always show the latest data,
+  and Postgres folds them into the final query anyway.
+- Only the final report is built as a table, since that's the one BI tools hit over and
+  over.
+- `rep_sales_funnel_monthly` counts `deal_changes` and `activity` once each, builds a
+  month-by-step grid from the date spine, and joins the counts onto it (filling gaps with
+  0). Each source is still read once, not once per step.
+- `int_deal_stage_history` boils `deal_changes` down to one row per deal and stage before
+  it joins to `stages`, so the join is against a 9-row table and stays cheap.
+- Nothing here is tied to Postgres beyond `date_trunc` and a cast, so it would move to
+  Snowflake (Enpal's warehouse) with little change.
 
-## 9. Possible Future Enhancements
+## 8. What I'd Add Next
 
-- Build a `dim_deal` (one row per deal) as a reusable backbone, collapsing `deal_changes`
-  into current stage, owner, `add_time`/created date, and lost reason per deal. This funnel
-  report is deliberately scoped to the brief, but a `dim_deal` is the natural next model: it
-  would let `int_deal_stage_history` and `int_deal_sales_call` join to deal attributes and
-  power owner, cohort, and reason-level analysis beyond this report.
-- Zero-fill the month by funnel_step grid (date spine) so BI tools do not need to handle
-  sparse months.
-- Bring in `users` for rep and owner-level funnel breakdowns.
-- Add conversion-rate columns directly in the mart (or a downstream model) rather than
-  computing them ad hoc.
-- If `deal_changes` grows large, switch `int_deal_stage_history` to an incremental model
-  keyed on `change_time`.
+- A `dim_deal` model (one row per deal) as a base others could reuse, pulling `deal_changes`
+  into one row per deal with its current stage, owner, created date, and lost reason. I kept
+  this project scoped to the brief, but `dim_deal` is the obvious next model: it would let
+  both intermediate models join to deal details and let you break the funnel down by owner,
+  by sign-up month, or by lost reason.
+- Bring in `users` for a per-rep or per-owner view of the funnel.
+- Add conversion-rate columns straight in the report (or a model after it) instead of
+  working them out by hand.
+- If `deal_changes` gets large, switch `int_deal_stage_history` to an incremental model
+  that reprocesses each deal that gets a new event (not just new `change_time` rows, since
+  the back-fill means one new event can change several stages for a deal), so full
+  rebuilds aren't needed.

@@ -3,14 +3,21 @@ version: 2
 models:
   - name: rep_sales_funnel_monthly
     description: >
-      Monthly sales funnel report: for each calendar month and funnel step,
-      the number of distinct deals that entered that funnel step in that
-      month. Stage steps follow Pipedrive's funnel convention - a deal that
-      reached a given stage counts as having entered every earlier stage too
-      (skipped stages back-filled). Covers funnel steps 1-9 (Lead Generation
-      through Renewal/Expansion) plus sub-steps 2.1 (Sales Call 1) and 3.1
-      (Sales Call 2). Named `rep_sales_funnel_monthly` (not `rpt_`) to match
-      the exact model name required by the assessment brief.
+      Monthly sales funnel. For each month and funnel step, how many different
+      deals reached that step that month. For the stage steps, a deal counts at
+      every stage up to the furthest one it reached, including stages it skipped,
+      the same way Pipedrive's own funnel report counts. Covers steps 1 to 9
+      (Lead Generation through Renewal/Expansion) plus sub-steps 2.1 (Sales Call
+      1) and 3.1 (Sales Call 2). Named `rep_sales_funnel_monthly` (not `rpt_`)
+      because the brief asks for that exact name.
+      Every month shows all nine stage steps (0 where no deal reached one), and
+      the Sales Call steps show only for the months that have activity data
+      (through 2024-09), so there are no made-up "0 calls" rows after that.
+      Heads up: the stage steps (1-9, from deal_changes) and the Sales Call steps
+      (2.1/3.1, from activity) are almost completely different sets of deals (only
+      8 shared deal ids), so don't read a call count as a conversion from the
+      stage above it. See NOTES.md Section 2 and
+      analyses/exploration_activity_deal_changes_overlap.sql.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           combination_of_columns:
@@ -18,11 +25,11 @@ models:
             - funnel_step
     columns:
       - name: month
-        description: Calendar month (1st of month) the milestone was reached in.
+        description: The month the step was reached (first of the month).
         data_tests:
           - not_null
       - name: kpi_name
-        description: Funnel step / KPI display name.
+        description: The step name shown in the report.
         data_tests:
           - not_null
           - accepted_values:
@@ -40,13 +47,13 @@ models:
                 - 'Renewal/Expansion'
       - name: funnel_step
         description: >
-          Funnel step number (1-9 for pipeline stages, 2.1/3.1 for the two
-          sales-call sub-steps).
+          Funnel step number (1 to 9 for stages, 2.1/3.1 for the two sales
+          calls).
         data_tests:
           - not_null
           - accepted_values:
               values: [1, 2, 2.1, 3, 3.1, 4, 5, 6, 7, 8, 9]
       - name: deals_count
-        description: Number of distinct deals that entered this funnel step in this month.
+        description: How many different deals reached this step this month.
         data_tests:
           - not_null

@@ -16,18 +16,17 @@ with stg_pipedrive__deal_changes as (
 )
 
 /*
-    Pipedrive's native funnel/conversion report counts a deal as having
-    "entered" every stage up to the furthest stage it reached, including stages
-    it skipped over (e.g. a deal that moved 2 -> 5 also counts in stages 3 and
-    4). ~84% of deals in this data skip at least one prior stage, so we back-fill.
+    Pipedrive's own funnel report counts a deal into every stage up to the
+    furthest one it reached, including stages it skipped (a deal that jumped
+    from 2 to 5 also counts in 3 and 4). About 84% of deals here skip a stage, so we
+    fill those gaps in.
 
-    A stage-change event to stage s is evidence the deal reached "stage k or
-    beyond" for every k <= s, so each event contributes a candidate entry time
-    to every stage k <= s. Taking MIN(changed_at) per (deal, stage k) gives the
-    first time the deal reached stage k or later. The join to the 9-row stages
-    table both enumerates k = 1..(deal's furthest stage) and supplies stage_name,
-    so the back-fill, the entry time, and the stage label all fall out of one
-    aggregate.
+    The trick: a change to stage s means the deal reached stage s, so it also
+    counts for every earlier stage k (where k <= s). Joining each change to the
+    9-row stages table lists those earlier stages, and the earliest change_time
+    per deal and stage is when the deal first got that far. So one join plus a
+    min() gives us the filled-in stages, the entry time, and the stage name all
+    at once.
 */
 , deal_stage_entered as (
     select

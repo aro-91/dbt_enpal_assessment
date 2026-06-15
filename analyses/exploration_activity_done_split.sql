@@ -1,8 +1,8 @@
 /*
-    Exploratory query: roughly half of each activity type is done = false
-    (scheduled, not completed). This is why int_deal_sales_call's Sales Call
-    1/2 counts (funnel steps 2.1/3.1) filter on is_done is true - see
-    NOTES.md (Section 5b) for the Pipedrive-convention justification.
+    About half of each activity type has done = false (scheduled, not finished).
+    That's why the Sales Call 1/2 counts in int_deal_sales_call (steps 2.1/3.1)
+    only keep rows where is_done is true. NOTES.md (Section 4b) explains why,
+    using how Pipedrive itself counts completed activities.
 */
 select
     type as activity_type_code

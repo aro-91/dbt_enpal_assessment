@@ -8,32 +8,33 @@ sub-steps 2.1 (Sales Call 1) and 3.1 (Sales Call 2).
 
 **Run it:**
 ```bash
-docker compose up -d                              # start Postgres + load raw CSVs
-source ~/.virtualenvs/dbt_env/bin/activate        # activate the dbt virtualenv
+docker compose up -d                              # start Postgres and load the raw CSVs
+source ~/.virtualenvs/dbt_env/bin/activate        # turn on the dbt virtualenv
 DBT_PROFILES_DIR=. dbt deps                         # install dbt_utils
-DBT_PROFILES_DIR=. dbt build                       # build all models + run tests
+DBT_PROFILES_DIR=. dbt build                       # build every model and run the tests
 ```
-Results land in the `public_pipedrive_analytics` schema (final model:
-`rep_sales_funnel_monthly`). Browse the model docs/lineage with
+The results land in the `public_pipedrive_analytics` schema (final model:
+`rep_sales_funnel_monthly`). To click through the model docs and lineage, run
 `DBT_PROFILES_DIR=. dbt docs generate && DBT_PROFILES_DIR=. dbt docs serve`.
 
-**Model layout** (`sources → staging → intermediate → marts`):
+**How the models are laid out** (raw sources, then staging, then intermediate, then marts):
 ```
 models/staging/pipedrive/     stg_pipedrive__{activity, activity_types, deal_changes, stages}
 models/intermediate/          int_deal_stage_history, int_deal_sales_call
-models/marts/reporting/       rep_sales_funnel_monthly   ← deliverable
-analyses/                     exploration queries backing each data-quality finding
+models/marts/reporting/       rep_sales_funnel_monthly   <- the deliverable
+analyses/                     the queries behind each thing I found in the data
 ```
-Uses `dbt_utils` (`generate_surrogate_key`, `unique_combination_of_columns`); run
-`DBT_PROFILES_DIR=. dbt deps` before the first build.
+It uses the `dbt_utils` package (`generate_surrogate_key`, `unique_combination_of_columns`),
+so run `DBT_PROFILES_DIR=. dbt deps` before the first build.
 
-**Key modeling decision:** stage steps use Pipedrive's own funnel convention, a deal
-that reaches a stage counts as having entered every earlier stage (skipped stages
-back-filled), since 84% of deals skip a stage. Sales Call steps count completed
-(`done = true`) activities only.
+**The main call I made:** for steps 1-9 I count a deal into every stage up to the furthest
+one it reached, even stages it skipped over, because that is how Pipedrive's own funnel
+report counts and because 84% of deals skip at least one stage. Sales Call steps count only
+activities marked done. Every month shows all stage steps (0 where none); Sales Call steps
+appear only for the months that have activity data (through 2024-09).
 
-**Docs:** [`NOTES.md`](NOTES.md) is the written walkthrough (approach, source-data
-exploration, design decisions, results, and insights).
+**Docs:** [`NOTES.md`](NOTES.md) is the full write-up (how I explored the data, the
+decisions I made, the results, and what stands out).
 
 ---
 
@@ -70,4 +71,3 @@ exploration, design decisions, results, and insights).
   &nbsp;&nbsp;&nbsp;Step 8: Follow-up/Customer Success  
   &nbsp;&nbsp;&nbsp;Step 9: Renewal/Expansion
 5. Column names of the reporting model: `month`, `kpi_name`, `funnel_step`, `deals_count`
-6. “Git commit” all the changes and create a PR to your forked repo (not the original one). Send your repo link to us.
