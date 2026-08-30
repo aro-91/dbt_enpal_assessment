@@ -1,0 +1,33 @@
+version: 2
+
+models:
+  - name: rep_sales_funnel_monthly
+    description: >
+      Required deliverable. Monthly count of distinct deals reaching each
+      funnel step. Backfilled per Pipedrive's Deal Progress report:
+      skipping from stage 2 to stage 5 counts as entering 3, 4, and 5
+      too. See support.pipedrive.com/en/article/insights-reports-deal-progress.
+    config:
+      contract:
+        enforced: true
+    columns:
+      - name: month
+        data_type: date
+        tests: [not_null]
+      - name: kpi_name
+        data_type: text
+        tests: [not_null]
+      - name: funnel_step
+        data_type: text
+        tests: [not_null]
+      - name: deals_count
+        data_type: integer
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              arguments:
+                expression: ">= 0"
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [month, funnel_step]
