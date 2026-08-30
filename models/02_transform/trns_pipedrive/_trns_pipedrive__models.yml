@@ -1,0 +1,55 @@
+version: 2
+
+models:
+  - name: trns_deal_stages_backfill
+    description: >
+      One row per deal per stage the deal ever reached, including stages
+      it skipped over. Backfilled and deduped to the first time each deal
+      reached each stage; see the mechanics comment at the top of the
+      model file.
+    columns:
+      - name: deal_id
+        tests: [not_null]
+      - name: stage_id
+        tests:
+          - not_null
+          - accepted_values:
+              values: [1, 2, 3, 4, 5, 6, 7, 8, 9]
+      - name: reached_at
+        tests: [not_null]
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [deal_id, stage_id]
+
+  - name: trns_deal_sales_calls_mapping
+    description: One row per deal per sales-call type, timestamped at the first completed call of that type.
+    columns:
+      - name: deal_id
+        tests: [not_null]
+      - name: activity_type_name
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['Sales Call 1', 'Sales Call 2']
+      - name: completed_at
+        tests: [not_null]
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [deal_id, activity_type_name]
+
+  - name: trns_deal_stage_funnel
+    description: >
+      The 9 pipeline stages and their labels, parsed from Pipedrive's own
+      field metadata (fields.field_value_options). Canonical source of
+      stage labels for rep_sales_funnel_monthly, of valid stage numbers
+      for trns_deal_stages_backfill, and the live side of
+      assert_seed_matches_source_stage_labels. Reading the labels live
+      means a stage added in Pipedrive reaches the report immediately;
+      the seed then fails that test until it catches up.
+    columns:
+      - name: stage_id
+        tests: [unique, not_null]
+      - name: kpi_name
+        tests: [not_null]

@@ -1,0 +1,38 @@
+version: 2
+
+models:
+  - name: stg_pipedrive__deal_changes
+    description: One row per field change event on a deal.
+    columns:
+      - name: deal_id
+        tests: [not_null]
+      - name: changed_field_key
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['add_time', 'user_id', 'stage_id', 'lost_reason']
+
+  - name: stg_pipedrive__activities
+    description: >
+      activity_id is not guaranteed unique; see the known-issue note on
+      the source table. No uniqueness test is asserted here. Deduping for
+      "first completed call per deal" happens in 02_transform.
+    columns:
+      - name: activity_id
+        tests: [not_null]
+      - name: deal_id
+        tests: [not_null]
+
+  - name: stg_pipedrive__activity_types
+    columns:
+      - name: activity_type_id
+        tests: [unique, not_null]
+      - name: activity_type_name
+        tests: [unique, not_null]
+
+  - name: stg_pipedrive__fields
+    columns:
+      - name: field_id
+        tests: [unique, not_null]
+      - name: field_key
+        tests: [unique, not_null]
